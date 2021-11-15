@@ -2,8 +2,10 @@
 
 This coursework is an adaptation of the classic Tetris game written in Tkinter.
 """
+
 # Imports
 import tkinter as tk
+from tetris_engine import TetrisEngine
 
 
 class TetrisApplication(tk.Frame):
