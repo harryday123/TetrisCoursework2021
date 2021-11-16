@@ -5,7 +5,7 @@ guidelines. More info at: https://tetris.fandom.com/wiki/Tetris_Guideline
 """
 
 # Imports
-from csv import DictReader, DictWriter, reader
+from csv import DictReader, DictWriter
 
 
 class TetrisEngine:
@@ -23,7 +23,18 @@ class TetrisEngine:
             Current keys are next_queue, hold_queue and ghost_piece
         _leaderboard:
             The relative file path to the leaderboard file.
+        _grid_tetrimino_map:
+            A dictionary in order to map a Tetrimino to its relevant number
     """
+    _grid_tetrimino_map = {
+        "O": "1",
+        "I": "2",
+        "T": "3",
+        "L": "4",
+        "J": "5",
+        "S": "6",
+        "Z": "7"
+    }
 
     def __init__(self, debug=False, scoreboard="leaderboard.csv"):
         """Initialise the Game Engine with the given options.
@@ -37,6 +48,55 @@ class TetrisEngine:
         self._debug = debug
         self._leaderboard = scoreboard
         self.set_game_options()
+
+    def create_grid(self):
+        """Create the grid property containing information on the grid.
+
+        Initialise a 20x10 2D array with the numbers representing the current
+        state of the grid cell.
+
+        0 means empty, the numbers 1-7 indicate what colour occupies the cell.
+        The numbers 11-17 indicate that the cell has a ghost piece in it.
+
+        Grid is referenced from the top left corner, y first then x.
+        So grid position (9, 3) would indicate the 9th row from the top,
+        3rd column from the left.
+        """
+        self.grid = [[0 for i in range(10)] for r in range(20)]
+        if self._debug:
+            print("DEBUG: Generated empty grid array")
+
+    def update_grid_position(self, row, col, type, ghost=False):
+        """Update a grid cell with a new Tetrimino or ghost piece.
+
+        0 means empty, the numbers 1-7 indicate what colour occupies the cell.
+        The numbers 11-17 indicate that the cell has a ghost piece in it.
+
+        Grid is referenced from the top left corner, y first then x.
+        So grid position (9, 3) would indicate the 9th row from the top,
+        3rd column from the left.
+
+        Args:
+            row:
+                The row number from the top of the grid
+            col:
+                The column number from the left of the grid
+            type:
+                The Tetrimino type (a single character)
+            ghost:
+                A boolean to determine if the grid contains a ghost piece
+        """
+        if ghost:
+            self.grid[row][col] = self._grid_tetrimino_map[type] + 10
+        else:
+            self.grid[row][col] = self._grid_tetrimino_map[type]
+
+        if self._debug:
+            print(
+                "DEBUG: Updated Grid Cell at row: ", row,
+                ", col: ", col, " with value", self.grid[row][col],
+                sep=" "
+            )
 
     def set_game_options(self, next_queue=6, hold_on=True, ghost_piece=True):
         """Set the options for the game engine.
@@ -99,7 +159,13 @@ class TetrisEngine:
 
             writer.writerow({"Initials": initials, "Score": score})
 
+        if self._debug:
+            print(
+                "DEBUG:", initials, "with score", score,
+                "added to leaderboard file", self._leaderboard
+            )
+
 
 if __name__ == "__main__":
     engine = TetrisEngine(debug=True)
-    engine._prepare_leaderboard_file()
+    engine.create_grid()
