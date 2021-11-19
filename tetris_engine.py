@@ -8,6 +8,7 @@ guidelines. More info at: https://tetris.fandom.com/wiki/Tetris_Guideline
 from csv import DictReader, DictWriter
 from datetime import datetime
 from ast import literal_eval
+from random import randint
 
 
 class TetrisEngine:
@@ -46,6 +47,10 @@ class TetrisEngine:
             score: The current score for the game
             lines: The number of lines the user has cleared so far
             level: The level the user is currently on
+        game_running:
+            Shows whether the game is currently in progress
+        _bag:
+            The bag to generate Tetriminos from
     """
 
     _grid_tetrimino_map = {
@@ -79,6 +84,8 @@ class TetrisEngine:
             "lines": 0,
             "level": 0
         }
+        self.game_running = False
+        self._bag = []
 
         # Set the game options to their default values
         self.set_game_options()
@@ -92,11 +99,10 @@ class TetrisEngine:
         0 means empty, the numbers 1-7 indicate what colour occupies the cell.
         The numbers 11-17 indicate that the cell has a ghost piece in it.
 
-        Grid is referenced from the top left corner, y first then x.
-        So grid position (9, 3) would indicate the 9th row from the top,
-        3rd column from the left.
+        Origin is bottom left corner. Y coordinate first then X.
+        So Grid[4][7] is the 4th row high and 7th column from the left.
         """
-        self.grid = [[0 for i in range(10)] for r in range(20)]
+        self.grid = [[0 for i in range(10)] for r in range(22)]
         if self._debug:
             print("DEBUG: Generated empty grid array")
 
@@ -123,7 +129,7 @@ class TetrisEngine:
 
         if self._debug:
             print("DEBUG: Generated output for save. Written to", file_name)
-            print(*lines, sep='\n')
+            # print(*lines, sep='\n')
 
     def load_game(self, filename):
         """Load a saved game from the given file.
@@ -142,8 +148,8 @@ class TetrisEngine:
         self.grid = literal_eval(lines[6].strip())
 
         if self._debug:
-            print("DEBUG: Opened save file and retrieved stored data:")
-            print(*lines)
+            print("DEBUG: Opened save file and retrieved stored data")
+            # print(*lines)
 
     def update_grid_position(self, row, col, type, ghost=False):
         """Update a grid cell with a new Tetrimino or ghost piece.
@@ -244,6 +250,50 @@ class TetrisEngine:
                 "DEBUG:", initials, "with score", score,
                 "added to leaderboard file", self._leaderboard
             )
+
+    def start_game(self):
+        """Start the game engine to play a game."""
+        self.game_running = True
+
+        if self._debug:
+            print("DEBUG: Game Started")
+
+    def _generation_phase(self):
+        """Generate a Tetrimino to add to the matrix."""
+        # Set the next Tetrimino as the current piece in play
+        self.current_piece = self.next_queue.pop(0)
+        # Add new Tetrimino to the next_queue
+        if self._bag == []:
+            self._bag = ["O", "I", "T", "L", "J", "S", "Z"]
+        # Append to the queue a random Tetrimino in the bag
+        self.next_queue.append(self._bag.pop(randint(len(self._bag) - 1)))
+
+        # Add the new piece to the grid
+        if self.current_piece == "I":
+            self.grid[20][4:8] = [self._grid_tetrimino_map["I"]] * 4
+        elif self.current_piece == "O":
+            self.grid[20][5:7] = [self._grid_tetrimino_map["O"]] * 2
+            self.grid[21][5:7] = [self._grid_tetrimino_map["O"]] * 2
+        elif self.current_piece == "T":
+            self.grid[20][5] = self._grid_tetrimino_map["T"]
+            self.grid[21][4:7] = [self._grid_tetrimino_map["T"]] * 3
+        elif self.current_piece == "L":
+            self.grid[20][6] = self._grid_tetrimino_map["L"]
+            self.grid[21][4:7] = [self._grid_tetrimino_map["L"]] * 3
+        elif self.current_piece == "J":
+            self.grid[20][4] = self._grid_tetrimino_map["J"]
+            self.grid[21][4:7] = [self._grid_tetrimino_map["J"]] * 3
+        elif self.current_piece == "S":
+            self.grid[20][5:7] = [self._grid_tetrimino_map["S"]] * 2
+            self.grid[21][4:6] = [self._grid_tetrimino_map["S"]] * 2
+        elif self.current_piece == "Z":
+            self.grid[20][4:6] = [self._grid_tetrimino_map["Z"]] * 2
+            self.grid[21][5:7] = [self._grid_tetrimino_map["Z"]] * 2
+
+        if self._debug:
+            print("DEBUG:", self.current_piece, "added to the grid")
+            print("DEBUG:", self.next_queue[-1], "pulled from the bag")
+            print("DEBUG: Current state of the bag is:", self._bag)
 
 
 if __name__ == "__main__":
