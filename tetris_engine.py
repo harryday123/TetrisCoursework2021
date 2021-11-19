@@ -25,6 +25,10 @@ class TetrisEngine:
             next_queue: How many of the next pieces to show. Integer 1-6
             hold_queue: Sets if the hold queue is turned on
             ghost_piece: Determines if the ghost piece is shown
+            lock_down:
+                The type of lock down setting to use.
+                Values are "Extended", "Infinite" or "Classic"
+                Refer to section 2.5.4 in the Tetris Guidlines for more info.
         _leaderboard:
             The relative file path to the leaderboard file.
         _grid_tetrimino_map:
@@ -190,7 +194,8 @@ class TetrisEngine:
         self._game_options = {
             "next_queue": next_queue,
             "hold_queue": hold_on,
-            "ghost_piece": ghost_piece
+            "ghost_piece": ghost_piece,
+            "lock_down": "Extended"
         }
         if self._debug:
             print("DEBUG: Set Game Options to", self._game_options)
