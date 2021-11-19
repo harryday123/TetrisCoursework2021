@@ -6,6 +6,8 @@ guidelines. More info at: https://tetris.fandom.com/wiki/Tetris_Guideline
 
 # Imports
 from csv import DictReader, DictWriter
+from datetime import datetime
+from ast import literal_eval
 
 
 class TetrisEngine:
@@ -20,12 +22,28 @@ class TetrisEngine:
             Debug mode shows output messages and logs to aid with debugging
         _game_options:
             A dictionary of game options.
-            Current keys are next_queue, hold_queue and ghost_piece
+            next_queue: How many of the next pieces to show. Integer 1-6
+            hold_queue: Sets if the hold queue is turned on
+            ghost_piece: Determines if the ghost piece is shown
         _leaderboard:
             The relative file path to the leaderboard file.
         _grid_tetrimino_map:
             A dictionary in order to map a Tetrimino to its relevant number
+        grid:
+            The array containing the matrix of cells on the board
+        next_queue:
+            The next 6 pieces to be added to the board
+        hold_queue:
+            The piece currently in the hold queue
+        current_piece:
+            The piece currently controlled by the player
+        stats:
+            A dictionary of statistics for the game.
+            score: The current score for the game
+            lines: The number of lines the user has cleared so far
+            level: The level the user is currently on
     """
+
     _grid_tetrimino_map = {
         "O": "1",
         "I": "2",
@@ -46,7 +64,19 @@ class TetrisEngine:
             print("DEBUG: Running TetrisEngine.__init__()")
 
         self._debug = debug
+        self._game_options = None
         self._leaderboard = scoreboard
+        self.grid = None
+        self.next_queue = None
+        self.hold_queue = None
+        self.current_piece = None
+        self.stats = {
+            "score": 0,
+            "lines": 0,
+            "level": 0
+        }
+
+        # Set the game options to their default values
         self.set_game_options()
 
     def create_grid(self):
@@ -65,6 +95,51 @@ class TetrisEngine:
         self.grid = [[0 for i in range(10)] for r in range(20)]
         if self._debug:
             print("DEBUG: Generated empty grid array")
+
+    def save_game(self):
+        """Save the current game state to a file.
+
+        This saves all the state variables to a file.
+        """
+        today = datetime.now()
+        formatted_time = today.strftime("%Y-%m-%d %H:%M")
+        file_name = formatted_time + ".txt"
+
+        lines = [
+            formatted_time,
+            self.current_piece,
+            self.hold_queue,
+            str(self.next_queue),
+            str(self.stats),
+            str(self._game_options),
+            str(self.grid)
+        ]
+        with open(file_name, mode='w') as f:
+            f.write("\n".join(lines))
+
+        if self._debug:
+            print("DEBUG: Generated output for save. Written to", file_name)
+            print(*lines, sep='\n')
+
+    def load_game(self, filename):
+        """Load a saved game from the given file.
+
+        Args:
+            filename: The file to read the saved game from
+        """
+        with open(filename, mode='r') as f:
+            lines = f.readlines()
+
+        self.current_piece = lines[1].strip()
+        self.hold_queue = lines[2].strip()
+        self.next_queue = literal_eval(lines[3].strip())
+        self.stats = literal_eval(lines[4].strip())
+        self._game_options = literal_eval(lines[5].strip())
+        self.grid = literal_eval(lines[6].strip())
+
+        if self._debug:
+            print("DEBUG: Opened save file and retrieved stored data:")
+            print(*lines)
 
     def update_grid_position(self, row, col, type, ghost=False):
         """Update a grid cell with a new Tetrimino or ghost piece.
@@ -168,4 +243,3 @@ class TetrisEngine:
 
 if __name__ == "__main__":
     engine = TetrisEngine(debug=True)
-    engine.create_grid()
