@@ -41,7 +41,16 @@ class TetrisEngine:
         hold_queue:
             The piece currently in the hold queue
         current_piece:
-            The piece currently controlled by the player
+            A dictionary describing the piece controlled by the player.
+            Tetrimino blocks are numbered top to bottom, left to right in the
+            North facing orientation.
+            type: The type of Tetrimino
+            facing: Which direction the piece is facing. ('N', 'E', 'S' or 'W')
+            block1: The coordinates for block 1
+            block2: The coordinates for block 2
+            block3: The coordinates for block 3
+            block4: The coordinates for block 4
+
         stats:
             A dictionary of statistics for the game.
             score: The current score for the game
@@ -78,7 +87,14 @@ class TetrisEngine:
         self.grid = None
         self.next_queue = None
         self.hold_queue = None
-        self.current_piece = None
+        self.current_piece = {
+            "type": "",
+            "facing": "",
+            "block1": (0, 0),
+            "block2": (0, 0),
+            "block3": (0, 0),
+            "block4": (0, 0)
+        }
         self.stats = {
             "score": 0,
             "lines": 0,
@@ -117,7 +133,7 @@ class TetrisEngine:
 
         lines = [
             formatted_time,
-            self.current_piece,
+            str(self.current_piece),
             self.hold_queue,
             str(self.next_queue),
             str(self.stats),
@@ -140,7 +156,7 @@ class TetrisEngine:
         with open(filename, mode='r') as f:
             lines = f.readlines()
 
-        self.current_piece = lines[1].strip()
+        self.current_piece = literal_eval(lines[1].strip())
         self.hold_queue = lines[2].strip()
         self.next_queue = literal_eval(lines[3].strip())
         self.stats = literal_eval(lines[4].strip())
@@ -151,7 +167,7 @@ class TetrisEngine:
             print("DEBUG: Opened save file and retrieved stored data")
             # print(*lines)
 
-    def update_grid_position(self, row, col, type, ghost=False):
+    def _update_grid_position(self, row, col, type, ghost=False):
         """Update a grid cell with a new Tetrimino or ghost piece.
 
         0 means empty, the numbers 1-7 indicate what colour occupies the cell.
@@ -167,14 +183,17 @@ class TetrisEngine:
             col:
                 The column number from the left of the grid
             type:
-                The Tetrimino type (a single character)
+                The Tetrimino type (a single character) or "E" for empty
             ghost:
                 A boolean to determine if the grid contains a ghost piece
         """
-        if ghost:
-            self.grid[row][col] = self._grid_tetrimino_map[type] + 10
+        if type == "E":
+            self.grid[row][col] = 0
         else:
-            self.grid[row][col] = self._grid_tetrimino_map[type]
+            if ghost:
+                self.grid[row][col] = self._grid_tetrimino_map[type] + 10
+            else:
+                self.grid[row][col] = self._grid_tetrimino_map[type]
 
         if self._debug:
             print(
@@ -182,6 +201,30 @@ class TetrisEngine:
                 ", col: ", col, " with value", self.grid[row][col],
                 sep=" "
             )
+
+    def _update_grid_with_current_piece(self, old_piece=None):
+        """Update the grid with the new position of the current piece.
+
+        Call this after the current piece has moved in order to update the grid
+
+        Args:
+            A copy of the old current_piece variable. Defaults to None.
+            If None is given then do not remove the old piece, just add the
+            new one
+        """
+        # Remove the old pieces
+        if old_piece is not None:
+            old_blocks = [old_piece["block" + str(i)] for i in range(1, 5)]
+            for (col, row) in old_blocks:
+                self._update_grid_position(row, col, "E")
+
+        # Add the new pieces
+        new_piece = [self.current_piece["block" + str(i)] for i in range(1, 5)]
+        for (col, row) in new_piece:
+            self._update_grid_position(row, col, self.current_piece["type"])
+
+        if self._debug:
+            print("DEBUG: Updated Grid with new position of current piece")
 
     def set_game_options(self, next_queue=6, hold_on=True, ghost_piece=True):
         """Set the options for the game engine.
@@ -260,41 +303,123 @@ class TetrisEngine:
 
     def _generation_phase(self):
         """Generate a Tetrimino to add to the matrix."""
-        # Set the next Tetrimino as the current piece in play
-        self.current_piece = self.next_queue.pop(0)
+        # Get the new piece type
+        new_type = self.next_queue.pop(0)
+
         # Add new Tetrimino to the next_queue
         if self._bag == []:
             self._bag = ["O", "I", "T", "L", "J", "S", "Z"]
         # Append to the queue a random Tetrimino in the bag
         self.next_queue.append(self._bag.pop(randint(len(self._bag) - 1)))
 
+        # Create the new piece
+        if new_type == "I":
+            self.current_piece = {
+                "type": "I",
+                "facing": "N",
+                "block1": (4, 20),
+                "block2": (5, 20),
+                "block3": (6, 20),
+                "block4": (7, 20)
+            }
+        elif new_type == "O":
+            self.current_piece = {
+                "type": "O",
+                "facing": "N",
+                "block1": (5, 21),
+                "block2": (6, 21),
+                "block3": (5, 20),
+                "block4": (6, 20)
+            }
+        elif new_type == "T":
+            self.current_piece = {
+                "type": "T",
+                "facing": "N",
+                "block1": (5, 21),
+                "block2": (4, 20),
+                "block3": (5, 20),
+                "block4": (6, 20)
+            }
+        elif new_type == "L":
+            self.current_piece = {
+                "type": "L",
+                "facing": "N",
+                "block1": (6, 21),
+                "block2": (4, 20),
+                "block3": (5, 20),
+                "block4": (6, 20)
+            }
+        elif new_type == "J":
+            self.current_piece = {
+                "type": "J",
+                "facing": "N",
+                "block1": (4, 21),
+                "block2": (4, 20),
+                "block3": (5, 20),
+                "block4": (6, 20)
+            }
+        elif new_type == "S":
+            self.current_piece = {
+                "type": "S",
+                "facing": "N",
+                "block1": (5, 21),
+                "block2": (6, 21),
+                "block3": (4, 20),
+                "block4": (5, 20)
+            }
+        elif new_type == "Z":
+            self.current_piece = {
+                "type": "Z",
+                "facing": "N",
+                "block1": (4, 21),
+                "block2": (5, 21),
+                "block3": (5, 20),
+                "block4": (6, 20)
+            }
+
         # Add the new piece to the grid
-        if self.current_piece == "I":
-            self.grid[20][4:8] = [self._grid_tetrimino_map["I"]] * 4
-        elif self.current_piece == "O":
-            self.grid[20][5:7] = [self._grid_tetrimino_map["O"]] * 2
-            self.grid[21][5:7] = [self._grid_tetrimino_map["O"]] * 2
-        elif self.current_piece == "T":
-            self.grid[20][5] = self._grid_tetrimino_map["T"]
-            self.grid[21][4:7] = [self._grid_tetrimino_map["T"]] * 3
-        elif self.current_piece == "L":
-            self.grid[20][6] = self._grid_tetrimino_map["L"]
-            self.grid[21][4:7] = [self._grid_tetrimino_map["L"]] * 3
-        elif self.current_piece == "J":
-            self.grid[20][4] = self._grid_tetrimino_map["J"]
-            self.grid[21][4:7] = [self._grid_tetrimino_map["J"]] * 3
-        elif self.current_piece == "S":
-            self.grid[20][5:7] = [self._grid_tetrimino_map["S"]] * 2
-            self.grid[21][4:6] = [self._grid_tetrimino_map["S"]] * 2
-        elif self.current_piece == "Z":
-            self.grid[20][4:6] = [self._grid_tetrimino_map["Z"]] * 2
-            self.grid[21][5:7] = [self._grid_tetrimino_map["Z"]] * 2
+        self._update_grid_with_current_piece()
+
+        # Check if the Tetrimino can drop any further
+        if not self._tetrimino_has_landed():
+            # TODO: Move the block down
+            pass
 
         if self._debug:
             print("DEBUG:", self.current_piece, "added to the grid")
             print("DEBUG:", self.next_queue[-1], "pulled from the bag")
             print("DEBUG: Current state of the bag is:", self._bag)
 
+    def _falling_phase(self):
+        pass
+
+    def _tetrimino_has_landed(self):
+        """Determine if a Tetrimino has landed on a surface.
+
+        Returns:
+            bool: True if the Tetrimino is on a surface.
+        """
+        if self._debug:
+            print("DEBUG: Checking if Tetrimino has landed")
+        # Get a list of the blocks
+        blocks = [self.current_piece["block" + str(i)] for i in range(1, 5)]
+        for (col, row) in blocks:
+            # Check if the blow directly below it is occupied
+            below = self.grid[row - 1][col]
+            if below in range(1, 8):
+                if self._debug:
+                    print("DEBUG: Tetrimino has touched down")
+                return True
+
 
 if __name__ == "__main__":
     engine = TetrisEngine(debug=True)
+    engine.current_piece = {
+        "type": "T",
+        "facing": "N",
+        "block1": (5, 4),
+        "block2": (6, 4),
+        "block3": (7, 4),
+        "block4": (6, 5)
+    }
+    engine._tetrimino_has_landed()
