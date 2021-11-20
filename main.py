@@ -117,23 +117,41 @@ class Stats(tk.Frame):
 
     def __init__(self, parent, *args, **kwargs):
         """Initialise the Frame."""
+        self.parent = parent
         tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.stats = {
-            "score": 0,
-            "lines": 0,
-            "level": 0,
-            "goal": 0
-        }
-        self.configure(height=600, width=200, bg="green")
+        self.score = tk.StringVar(self, value="0")
+        self.lines = tk.StringVar(self, value="0")
+        self.level = tk.StringVar(self, value="0")
+        self.goal = tk.StringVar(self, value="0")
 
-    def update_stats(self, stats):
+        self.configure(height=600, width=200)
+
+        tk.Label(self, text="Score:").pack()
+        self.score_lbl = tk.Label(self, textvariable=self.score)
+        self.score_lbl.pack()
+
+        tk.Label(self, text="Lines Cleared:").pack()
+        self.lines_lbl = tk.Label(self, textvariable=self.lines)
+        self.lines_lbl.pack()
+
+        tk.Label(self, text="Level:").pack()
+        self.level_lbl = tk.Label(self, textvariable=self.level)
+        self.level_lbl.pack()
+
+        tk.Label(self, text="Goal:").pack()
+        self.goal_lbl = tk.Label(self, textvariable=self.goal)
+        self.goal_lbl.pack()
+
+    def update_stats(self, score, lines, level, goal):
         """Update the stats shown.
 
         Args:
             stats: A dictionary representing the new stats to update
         """
-        for key in stats:
-            self.stats[key] = stats[key]
+        self.score.set(str(score))
+        self.lines.set(str(lines))
+        self.level.set(str(level))
+        self.goal.set(str(goal))
 
 
 if __name__ == "__main__":
