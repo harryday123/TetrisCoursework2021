@@ -23,10 +23,10 @@ class TetrisEngine:
             Debug mode shows output messages and logs to aid with debugging
         _game_options:
             A dictionary of game options.
-            next_queue: How many of the next pieces to show. Integer 1-6
-            hold_queue: Sets if the hold queue is turned on
-            ghost_piece: Determines if the ghost piece is shown
-            lock_down:
+             - next_queue: How many of the next pieces to show. Integer 1-6
+             - hold_queue: Sets if the hold queue is turned on
+             - ghost_piece: Determines if the ghost piece is shown
+             - lock_down:
                 The type of lock down setting to use.
                 Values are "Extended", "Infinite" or "Classic"
                 Refer to section 2.5.4 in the Tetris Guidlines for more info.
@@ -44,22 +44,34 @@ class TetrisEngine:
             A dictionary describing the piece controlled by the player.
             Tetrimino blocks are numbered top to bottom, left to right in the
             North facing orientation.
-            type: The type of Tetrimino
-            facing: Which direction the piece is facing. ('N', 'E', 'S' or 'W')
-            block1: The coordinates for block 1
-            block2: The coordinates for block 2
-            block3: The coordinates for block 3
-            block4: The coordinates for block 4
+             - type: The type of Tetrimino
+             - facing: Which direction the piece is facing. ('N', 'E', 'S' or 'W')
+             - block1: The coordinates for block 1
+             - block2: The coordinates for block 2
+             - block3: The coordinates for block 3
+             - block4: The coordinates for block 4
 
         stats:
             A dictionary of statistics for the game.
-            score: The current score for the game
-            lines: The number of lines the user has cleared so far
-            level: The level the user is currently on
+             - score: The current score for the game
+             - lines: The number of lines the user has cleared so far
+             - level: The level the user is currently on
         game_running:
             Shows whether the game is currently in progress
         _bag:
             The bag to generate Tetriminos from
+        latest_input:
+            The latest command the user has entered whilst playing
+            Commands:
+             - Hold
+             - Hard_D
+             - Soft_D
+             - Move_L
+             - Move_R
+             - Rotate_C
+             - Rotate_AC
+         _fallspeed:
+            The normal fall speed for the level. Defined in seconds per line.
     """
 
     _grid_tetrimino_map = {
@@ -87,6 +99,7 @@ class TetrisEngine:
         self.grid = None
         self.next_queue = None
         self.hold_queue = None
+        self.latest_input = None
         self.current_piece = {
             "type": "",
             "facing": "",
@@ -102,6 +115,7 @@ class TetrisEngine:
         }
         self.game_running = False
         self._bag = []
+        self._fallspeed = 0
 
         # Set the game options to their default values
         self.set_game_options()
@@ -390,7 +404,14 @@ class TetrisEngine:
             print("DEBUG: Current state of the bag is:", self._bag)
 
     def _falling_phase(self):
-        pass
+        while self._check_movement_possible():
+            # TODO: Make the block fall and check for input
+            pass
+
+    def _hard_drop(self):
+        """Hard Drop the current piece."""
+        while self._check_movement_possible():
+            self._move_current_piece()
 
     def _move_current_piece(self, direction="D"):
         """Move the current piece based on the direction given.
