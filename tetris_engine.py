@@ -45,7 +45,7 @@ class TetrisEngine:
             Tetrimino blocks are numbered top to bottom, left to right in the
             North facing orientation.
              - type: The type of Tetrimino
-             - facing: Which direction the piece is facing. ('N', 'E', 'S' or 'W')
+             - facing: Which direction the piece is facing. (N, E, S or W)
              - block1: The coordinates for block 1
              - block2: The coordinates for block 2
              - block3: The coordinates for block 3
@@ -56,6 +56,7 @@ class TetrisEngine:
              - score: The current score for the game
              - lines: The number of lines the user has cleared so far
              - level: The level the user is currently on
+             - goal: The next goal for line clears
         game_running:
             Shows whether the game is currently in progress
         _bag:
@@ -111,7 +112,8 @@ class TetrisEngine:
         self.stats = {
             "score": 0,
             "lines": 0,
-            "level": 0
+            "level": 0,
+            "goal": 0
         }
         self.game_running = False
         self._bag = []
@@ -410,6 +412,9 @@ class TetrisEngine:
 
     def _hard_drop(self):
         """Hard Drop the current piece."""
+        if self._debug:
+            print("DEBUG: Hard Dropping")
+
         while self._check_movement_possible():
             self._move_current_piece()
 
@@ -428,6 +433,8 @@ class TetrisEngine:
                     C: Rotation clockwise
                     A: Rotation anti-clockwise
         """
+        if self._debug:
+            print("DEBUG: Moving current piece in direction:", direction)
         # Preserve the last position for updating later
         old_piece = self.current_piece
         # If the direction is a move
@@ -455,6 +462,8 @@ class TetrisEngine:
         # After any movement update the grid
         if old_piece != self.current_piece:
             self._update_grid_with_current_piece()
+            if self._debug:
+                print("DEBUG: Piece moved")
 
     def _check_movement_possible(self, direction="D"):
         """Check if the current piece is blocked from moving in a direction.
@@ -507,6 +516,62 @@ class TetrisEngine:
             return
         # TODO: Add rotations as an option
         pass
+
+    def _pattern_match(self):
+        """Check the grid for lines to be cleared.
+
+        Check each row in turn and if it is full then mark it to be deleted.
+        """
+        if self._debug:
+            print("DEBUG: Checking for line clears")
+
+        rows_to_clear = []
+        # Loop through each row
+        for i in range(len(self.grid)):
+            row_clear = True
+            # Check each cell in the row
+            for cell in self.grid[i]:
+                # If the cell does not contain a Mino
+                if cell not in range(1, 8):
+                    # Do not clear the row
+                    row_clear = False
+                    break
+            # If the row can be cleared
+            if row_clear:
+                # Add the row to the list
+                rows_to_clear.append(i)
+
+        # After all rows are checked update the grid
+        self._clear_rows(rows_to_clear)
+
+        # Update the lines cleared stat
+        self.stats["lines"] += len(rows_to_clear)
+        if self._debug:
+            print("DEBUG: Lines cleared updated to:", self.stats["lines"])
+
+    def _clear_rows(self, rows):
+        """Clear the given rows from the grid.
+
+        Args:
+            rows: The list of rows to remove
+        """
+        for row in rows:
+            self.grid.pop(row)
+            self.grid.append([0 for i in range(10)])
+
+        if self._debug:
+            print("DEBUG: Rows:", rows, "cleared from the grid")
+
+    def _completion_phase(self):
+        """Finalise the round and prepare for the next generation."""
+        # TODO: Update Score
+        # Check if level up has occured
+        if self.stats["goal"] <= self.stats["lines"]:
+            if self._debug:
+                print("DEBUG: Level Up Occured")
+
+            self.stats["level"] += 1
+            self.stats["goal"] += self.stats["level"] * 5
 
 
 if __name__ == "__main__":
