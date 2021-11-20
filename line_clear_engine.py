@@ -32,8 +32,8 @@ class LineClearEngine:
                 Refer to section 2.5.4 in the Tetris Guidlines for more info.
         _leaderboard:
             The relative file path to the leaderboard file.
-        _grid_tetrimino_map:
-            A dictionary in order to map a Tetrimino to its relevant number
+        _grid_piece_map:
+            A dictionary in order to map a piece to its relevant number
         grid:
             The array containing the matrix of cells on the board
         next_queue:
@@ -42,9 +42,9 @@ class LineClearEngine:
             The piece currently in the hold queue
         current_piece:
             A dictionary describing the piece controlled by the player.
-            Tetrimino blocks are numbered top to bottom, left to right in the
+            piece blocks are numbered top to bottom, left to right in the
             North facing orientation.
-             - type: The type of Tetrimino
+             - type: The type of piece
              - facing: Which direction the piece is facing. (N, E, S or W)
              - block1: The coordinates for block 1
              - block2: The coordinates for block 2
@@ -62,7 +62,7 @@ class LineClearEngine:
         game_paused:
             Shows whether the game is currently paused
         _bag:
-            The bag to generate Tetriminos from
+            The bag to generate pieces from
         latest_input:
             The latest command the user has entered whilst playing
             Commands:
@@ -77,7 +77,7 @@ class LineClearEngine:
             The normal fall speed for the level. Defined in seconds per line.
     """
 
-    _grid_tetrimino_map = {
+    _grid_piece_map = {
         "O": "1",
         "I": "2",
         "T": "3",
@@ -193,7 +193,7 @@ class LineClearEngine:
             # print(*lines)
 
     def _update_grid_position(self, row, col, type, ghost=False):
-        """Update a grid cell with a new Tetrimino or ghost piece.
+        """Update a grid cell with a new piece or ghost piece.
 
         0 means empty, the numbers 1-7 indicate what colour occupies the cell.
         The numbers 11-17 indicate that the cell has a ghost piece in it.
@@ -208,7 +208,7 @@ class LineClearEngine:
             col:
                 The column number from the left of the grid
             type:
-                The Tetrimino type (a single character) or "E" for empty
+                The piece type (a single character) or "E" for empty
             ghost:
                 A boolean to determine if the grid contains a ghost piece
         """
@@ -216,9 +216,9 @@ class LineClearEngine:
             self.grid[row][col] = 0
         else:
             if ghost:
-                self.grid[row][col] = self._grid_tetrimino_map[type] + 10
+                self.grid[row][col] = self._grid_piece_map[type] + 10
             else:
-                self.grid[row][col] = self._grid_tetrimino_map[type]
+                self.grid[row][col] = self._grid_piece_map[type]
 
         if self._debug:
             print(
@@ -257,10 +257,10 @@ class LineClearEngine:
 
         Args:
             next_queue:
-                How many Tetriminos to display in the next queue.
+                How many pieces to display in the next queue.
                 Int 1-6
             hold_on:
-                Sets whether the user is able to hold a Tetrimino or not
+                Sets whether the user is able to hold a piece or not
                 Defaults to True
             ghost_piece:
                 Whether to show the ghost piece
@@ -340,14 +340,14 @@ class LineClearEngine:
         #
 
     def _generation_phase(self):
-        """Generate a Tetrimino to add to the matrix."""
+        """Generate a piece to add to the matrix."""
         # Get the new piece type
         new_type = self.next_queue.pop(0)
 
-        # Add new Tetrimino to the next_queue
+        # Add new piece to the next_queue
         if self._bag == []:
             self._bag = ["O", "I", "T", "L", "J", "S", "Z"]
-        # Append to the queue a random Tetrimino in the bag
+        # Append to the queue a random piece in the bag
         self.next_queue.append(self._bag.pop(randint(len(self._bag) - 1)))
 
         # Create the new piece
@@ -418,7 +418,7 @@ class LineClearEngine:
         # Add the new piece to the grid
         self._update_grid_with_current_piece()
 
-        # Check if the Tetrimino can drop any further
+        # Check if the piece can drop any further
         if self._check_movement_possible():
             self._move_current_piece()
 
@@ -532,7 +532,7 @@ class LineClearEngine:
             target = self.grid[row + row_delta][col + col_delta]
             if target in range(1, 8):
                 if self._debug:
-                    print("DEBUG - LineClearEngine: Tetrimino is blocked")
+                    print("DEBUG - LineClearEngine: piece is blocked")
                 return False
 
     def _super_rotation(self, clockwise):
@@ -544,7 +544,7 @@ class LineClearEngine:
         Args:
             clockwise: A boolean that determines if the rotation is clockwise.
         """
-        # Cannot rotate the O Tetrimino
+        # Cannot rotate the O piece
         if self.current_piece["type"] == "O":
             return
         # TODO: Add rotations as an option

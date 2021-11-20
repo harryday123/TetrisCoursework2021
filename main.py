@@ -39,10 +39,10 @@ class LineClearApplication(tk.Frame):
         self.stats_frame = Stats(self, *args, **kwargs)
 
         # Place Subframes
-        self.hold_queue_frame.pack()
-        self.stats_frame.pack()
-        self.matrix_frame.pack()
-        self.next_queue_frame.pack()
+        self.hold_queue_frame.grid(column=1, row=1)
+        self.stats_frame.grid(column=1, row=2)
+        self.matrix_frame.grid(column=2, row=1, rowspan=2)
+        self.next_queue_frame.grid(column=3, row=1, rowspan=2)
 
 
 class NextQueue(tk.Frame):
@@ -52,6 +52,7 @@ class NextQueue(tk.Frame):
         """Initialise the Frame."""
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.queue = []
+        self.configure(height=800, width=200, bg="red")
 
     def update_queue(self, queue):
         """Update the queue.
@@ -69,6 +70,7 @@ class Matrix(tk.Frame):
         """Initialise the Frame."""
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.matrix = [[0 for i in range(10)] for r in range(22)]
+        self.configure(height=800, width=400, bg="blue")
 
     def update_matrix(self, matrix):
         """Update the matrix.
@@ -80,12 +82,23 @@ class Matrix(tk.Frame):
 
 
 class HoldQueue(tk.Frame):
-    """The frame to show the hold queue."""
+    """The frame to show the hold queue.
+
+    Attributs:
+        parent: The parent of this Frame
+        piece_image = The PhotoImage for the hold queue label
+        piece_Lbl: The Label displaying the image
+    """
 
     def __init__(self, parent, *args, **kwargs):
         """Initialise the Frame."""
+        self.parent = parent
         tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.queue = ""
+        self.configure(height=200, width=200)
+
+        self.piece_image = None
+        self.piece_Lbl = tk.Label(self, image=self.piece_image)
+        self.piece_Lbl.pack()
 
     def update_queue(self, queue):
         """Update the queue.
@@ -93,7 +106,10 @@ class HoldQueue(tk.Frame):
         Args:
             queue: A character representing the hold piece.
         """
-        self.queue = queue
+        file_name = "./assets/images/" + queue + "-Piece.png"
+        newimg = tk.PhotoImage(file=file_name)
+        self.piece_Lbl.configure(image=newimg)
+        self.piece_Lbl.image = newimg
 
 
 class Stats(tk.Frame):
@@ -108,6 +124,7 @@ class Stats(tk.Frame):
             "level": 0,
             "goal": 0
         }
+        self.configure(height=600, width=200, bg="green")
 
     def update_stats(self, stats):
         """Update the stats shown.
@@ -120,9 +137,15 @@ class Stats(tk.Frame):
 
 
 if __name__ == "__main__":
+    # Initialise Window
     root = tk.Tk()
     root.geometry("1600x900")
     root.title("Line Clearing Game")
+    root.configure(bg="#616161")
+
+    # Create Canvas
+    # canvas = tk.Canvas(root, bg="gray", width=1600, height=900)
+    # canvas.pack()
 
     LineClearApplication(LineClearEngine(), root).pack()
     root.mainloop()
