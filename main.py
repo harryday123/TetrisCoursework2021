@@ -96,8 +96,8 @@ class HoldQueue(tk.Frame):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.configure(height=200, width=200)
 
-        self.piece_image = None
-        self.piece_Lbl = tk.Label(self, image=self.piece_image)
+        self.piece_image = tk.PhotoImage(file="./assets/images/O-Piece.png")
+        self.piece_Lbl = tk.Label(self, image=self.piece_image, bg="#616161")
         self.piece_Lbl.pack()
 
     def update_queue(self, queue):
@@ -126,20 +126,20 @@ class Stats(tk.Frame):
 
         self.configure(height=600, width=200)
 
-        tk.Label(self, text="Score:").pack()
-        self.score_lbl = tk.Label(self, textvariable=self.score)
+        tk.Label(self, text="Score:", bg="#616161").pack()
+        self.score_lbl = tk.Label(self, textvariable=self.score, bg="#616161")
         self.score_lbl.pack()
 
-        tk.Label(self, text="Lines Cleared:").pack()
-        self.lines_lbl = tk.Label(self, textvariable=self.lines)
+        tk.Label(self, text="Lines Cleared:", bg="#616161").pack()
+        self.lines_lbl = tk.Label(self, textvariable=self.lines, bg="#616161")
         self.lines_lbl.pack()
 
-        tk.Label(self, text="Level:").pack()
-        self.level_lbl = tk.Label(self, textvariable=self.level)
+        tk.Label(self, text="Level:", bg="#616161").pack()
+        self.level_lbl = tk.Label(self, textvariable=self.level, bg="#616161")
         self.level_lbl.pack()
 
-        tk.Label(self, text="Goal:").pack()
-        self.goal_lbl = tk.Label(self, textvariable=self.goal)
+        tk.Label(self, text="Goal:", bg="#616161").pack()
+        self.goal_lbl = tk.Label(self, textvariable=self.goal, bg="#616161")
         self.goal_lbl.pack()
 
     def update_stats(self, score, lines, level, goal):
@@ -165,5 +165,5 @@ if __name__ == "__main__":
     # canvas = tk.Canvas(root, bg="gray", width=1600, height=900)
     # canvas.pack()
 
-    LineClearApplication(LineClearEngine(), root).pack()
+    LineClearApplication(LineClearEngine(), root, bg="#616161").pack()
     root.mainloop()
