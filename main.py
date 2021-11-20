@@ -48,11 +48,33 @@ class LineClearApplication(tk.Frame):
 class NextQueue(tk.Frame):
     """The frame to show the next queue."""
 
+    _piece_file_map = {
+        "O": "./assets/images/skinny/O-Piece.png",
+        "I": "./assets/images/skinny/I-Piece.png",
+        "T": "./assets/images/skinny/T-Piece.png",
+        "L": "./assets/images/skinny/L-Piece.png",
+        "J": "./assets/images/skinny/J-Piece.png",
+        "S": "./assets/images/skinny/S-Piece.png",
+        "Z": "./assets/images/skinny/Z-Piece.png"
+    }
+
     def __init__(self, parent, *args, **kwargs):
         """Initialise the Frame."""
         tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.queue = []
-        self.configure(height=800, width=200, bg="red")
+        self.configure(height=800, width=200)
+
+        # Set up the queue images initially
+        self.queue_images = [None] * 6
+        self.queue_images_lbls = [
+            tk.Label(
+                self,
+                image=image,
+                bg="#616161"
+            ) for image in self.queue_images
+        ]
+
+        for image in self.queue_images_lbls:
+            image.pack(pady=27)
 
     def update_queue(self, queue):
         """Update the queue.
@@ -60,7 +82,15 @@ class NextQueue(tk.Frame):
         Args:
             queue: A list of characters representing the next pieces.
         """
-        self.queue = queue
+        # Create new PhotoImages
+        self.queue_images = [
+            tk.PhotoImage(file=self._piece_file_map[type]) for type in queue
+        ]
+
+        # Update Each Label
+        for i in range(len(self.queue_images_lbls)):
+            self.queue_images_lbls[i].configure(image=self.queue_images[i])
+            self.queue_images_lbls[i].image = self.queue_images[i]
 
 
 class Matrix(tk.Frame):
@@ -96,7 +126,7 @@ class HoldQueue(tk.Frame):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.configure(height=200, width=200)
 
-        self.piece_image = tk.PhotoImage(file="./assets/images/O-Piece.png")
+        self.piece_image = None
         self.piece_Lbl = tk.Label(self, image=self.piece_image, bg="#616161")
         self.piece_Lbl.pack()
 

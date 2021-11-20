@@ -23,7 +23,6 @@ class LineClearEngine:
             Debug mode shows output messages and logs to aid with debugging
         _game_options:
             A dictionary of game options.
-             - next_queue: How many of the next pieces to show. Integer 1-6
              - hold_queue: Sets if the hold queue is turned on
              - ghost_piece: Determines if the ghost piece is shown
              - lock_down:
@@ -252,13 +251,10 @@ class LineClearEngine:
             print("DEBUG - LineClearEngine: Updated Grid with new position",
                   "of current piece")
 
-    def set_game_options(self, next_queue=6, hold_on=True, ghost_piece=True):
+    def set_game_options(self, hold_on=True, ghost_piece=True):
         """Set the options for the game engine.
 
         Args:
-            next_queue:
-                How many pieces to display in the next queue.
-                Int 1-6
             hold_on:
                 Sets whether the user is able to hold a piece or not
                 Defaults to True
@@ -267,7 +263,6 @@ class LineClearEngine:
                 Defaults to True
         """
         self._game_options = {
-            "next_queue": next_queue,
             "hold_queue": hold_on,
             "ghost_piece": ghost_piece,
             "lock_down": "Extended"
