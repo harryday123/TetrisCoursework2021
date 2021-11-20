@@ -106,7 +106,7 @@ class TetrisEngine:
         # Set the game options to their default values
         self.set_game_options()
 
-    def create_grid(self):
+    def _create_grid(self):
         """Create the grid property containing information on the grid.
 
         Initialise a 20x10 2D array with the numbers representing the current
@@ -381,9 +381,8 @@ class TetrisEngine:
         self._update_grid_with_current_piece()
 
         # Check if the Tetrimino can drop any further
-        if not self._tetrimino_has_landed():
-            # TODO: Move the block down
-            pass
+        if self._check_movement_possible():
+            self._move_current_piece()
 
         if self._debug:
             print("DEBUG:", self.current_piece, "added to the grid")
@@ -393,27 +392,90 @@ class TetrisEngine:
     def _falling_phase(self):
         pass
 
-    def _tetrimino_has_landed(self):
-        """Determine if a Tetrimino has landed on a surface.
+    def _move_current_piece(self, direction="D"):
+        """Move the current piece based on the direction given.
+
+        Given a direction, calculate if the input is possible and if it is then
+        execute the movement/rotation.
+
+        Args:
+            direction:
+                A single character representing the desired movement:
+                    L: Move left
+                    R: Move right
+                    D: Move down
+                    C: Rotation clockwise
+                    A: Rotation anti-clockwise
+        """
+        # Preserve the last position for updating later
+        old_piece = self.current_piece
+        # If the direction is a move
+        if direction in "LRD":
+            # Check if the move is possible
+            if self._check_movement_possible(direction=direction):
+                # Set the row and column deltas depending on the direction
+                row_delta = -1 if direction == "D" else 0
+                col_delta = -1 if direction == "L" else (
+                    1 if direction == "R" else 0
+                )
+
+                # Update each block with the new postion
+                for i in range(1, 5):
+                    (col, row) = self.current_piece["block" + str(i)]
+                    self.current_piece["block" + str(i)] = (
+                        col + col_delta,
+                        row + row_delta
+                    )
+        elif direction == "C":
+            pass
+        elif direction == "A":
+            pass
+
+        # After any movement update the grid
+        if old_piece != self.current_piece:
+            self._update_grid_with_current_piece()
+
+    def _check_movement_possible(self, direction="D"):
+        """Check if the current piece is blocked from moving in a direction.
+
+        If the piece has blocks directly next to the piece in the direction
+        specified then a move in the given direction is not possible.
+
+        Args:
+            direction: A character representing the direction. (L, R or D)
 
         Returns:
-            bool: True if the Tetrimino is on a surface.
+            A boolean determining if a movement in the direction is possible.
         """
         if self._debug:
-            print("DEBUG: Checking if Tetrimino has landed")
+            print("DEBUG: Checking if piece movement is possible:", direction)
+
         # Get a list of the blocks
         blocks = [self.current_piece["block" + str(i)] for i in range(1, 5)]
+
+        # Set the delta for row and column
+        if direction == "D":
+            row_delta = -1
+            col_delta = 0
+        elif direction == "L":
+            row_delta = 0
+            col_delta = -1
+        elif direction == "R":
+            row_delta = 0
+            col_delta = 1
+
         for (col, row) in blocks:
             # Check if the blow directly below it is occupied
-            below = self.grid[row - 1][col]
-            if below in range(1, 8):
+            target = self.grid[row + row_delta][col + col_delta]
+            if target in range(1, 8):
                 if self._debug:
-                    print("DEBUG: Tetrimino has touched down")
-                return True
+                    print("DEBUG: Tetrimino is blocked")
+                return False
 
 
 if __name__ == "__main__":
     engine = TetrisEngine(debug=True)
+    engine._create_grid()
     engine.current_piece = {
         "type": "T",
         "facing": "N",
@@ -422,4 +484,5 @@ if __name__ == "__main__":
         "block3": (7, 4),
         "block4": (6, 5)
     }
-    engine._tetrimino_has_landed()
+    engine._move_current_piece(direction="D")
+    print(engine.current_piece)
