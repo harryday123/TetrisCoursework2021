@@ -1,6 +1,6 @@
-"""Tetris Game Engine for COMP16321 Coursework.
+"""Line Clear Game Engine for COMP16321 Coursework.
 
-The module contains the Tetris Game Engine adapted from the official Tetris
+The module contains the Line Clear Game Engine adapted from the official Tetris
 guidelines. More info at: https://tetris.fandom.com/wiki/Tetris_Guideline
 """
 
@@ -11,12 +11,12 @@ from ast import literal_eval
 from random import randint
 
 
-class TetrisEngine:
-    """An engine to run the classic Tetris Game.
+class LineClearEngine:
+    """An engine to run the classic line clearing game.
 
     This class contains all the relevant code in order to have a functioning
-    version of the tetris game. It provides an API to connect this engine to
-    a GUI.
+    version of the line clearing game. It provides an API to connect this
+    engine to a GUI.
 
     Attributes:
         _debug:
@@ -59,6 +59,8 @@ class TetrisEngine:
              - goal: The next goal for line clears
         game_running:
             Shows whether the game is currently in progress
+        game_paused:
+            Shows whether the game is currently paused
         _bag:
             The bag to generate Tetriminos from
         latest_input:
@@ -92,7 +94,7 @@ class TetrisEngine:
             debug: Determines whether to run the engine in debug mode
         """
         if debug:
-            print("DEBUG: Running TetrisEngine.__init__()")
+            print("DEBUG - LineClearEngine: Running LineClearEngine.__init__()")
 
         self._debug = debug
         self._game_options = None
@@ -116,6 +118,7 @@ class TetrisEngine:
             "goal": 0
         }
         self.game_running = False
+        self.game_paused = False
         self._bag = []
         self._fallspeed = 0
 
@@ -136,7 +139,7 @@ class TetrisEngine:
         """
         self.grid = [[0 for i in range(10)] for r in range(22)]
         if self._debug:
-            print("DEBUG: Generated empty grid array")
+            print("DEBUG - LineClearEngine: Generated empty grid array")
 
     def save_game(self):
         """Save the current game state to a file.
@@ -160,7 +163,10 @@ class TetrisEngine:
             f.write("\n".join(lines))
 
         if self._debug:
-            print("DEBUG: Generated output for save. Written to", file_name)
+            print(
+                "DEBUG - LineClearEngine: Generated output for save. Written to",
+                file_name
+            )
             # print(*lines, sep='\n')
 
     def load_game(self, filename):
@@ -180,7 +186,10 @@ class TetrisEngine:
         self.grid = literal_eval(lines[6].strip())
 
         if self._debug:
-            print("DEBUG: Opened save file and retrieved stored data")
+            print(
+                "DEBUG - LineClearEngine: Opened save file and",
+                "retrieved stored data"
+            )
             # print(*lines)
 
     def _update_grid_position(self, row, col, type, ghost=False):
@@ -213,7 +222,7 @@ class TetrisEngine:
 
         if self._debug:
             print(
-                "DEBUG: Updated Grid Cell at row: ", row,
+                "DEBUG - LineClearEngine: Updated Grid Cell at row: ", row,
                 ", col: ", col, " with value", self.grid[row][col],
                 sep=" "
             )
@@ -240,7 +249,8 @@ class TetrisEngine:
             self._update_grid_position(row, col, self.current_piece["type"])
 
         if self._debug:
-            print("DEBUG: Updated Grid with new position of current piece")
+            print("DEBUG - LineClearEngine: Updated Grid with new position",
+                  "of current piece")
 
     def set_game_options(self, next_queue=6, hold_on=True, ghost_piece=True):
         """Set the options for the game engine.
@@ -263,7 +273,10 @@ class TetrisEngine:
             "lock_down": "Extended"
         }
         if self._debug:
-            print("DEBUG: Set Game Options to", self._game_options)
+            print(
+                "DEBUG - LineClearEngine: Set Game Options to",
+                self._game_options
+            )
 
     def read_leaderboard(self):
         """Return the saved leaderboard.
@@ -282,7 +295,7 @@ class TetrisEngine:
 
         output_list.sort(key=lambda x: x[1])
         if self._debug:
-            print("DEBUG: Leaderboard Generated: ", output_list)
+            print("DEBUG - LineClearEngine: Leaderboard Generated: ", output_list)
 
         return output_list
 
@@ -306,7 +319,7 @@ class TetrisEngine:
 
         if self._debug:
             print(
-                "DEBUG:", initials, "with score", score,
+                "DEBUG - LineClearEngine:", initials, "with score", score,
                 "added to leaderboard file", self._leaderboard
             )
 
@@ -315,7 +328,7 @@ class TetrisEngine:
         self.game_running = True
 
         if self._debug:
-            print("DEBUG: Game Started")
+            print("DEBUG - LineClearEngine: Game Started")
 
     def _generation_phase(self):
         """Generate a Tetrimino to add to the matrix."""
@@ -401,9 +414,14 @@ class TetrisEngine:
             self._move_current_piece()
 
         if self._debug:
-            print("DEBUG:", self.current_piece, "added to the grid")
-            print("DEBUG:", self.next_queue[-1], "pulled from the bag")
-            print("DEBUG: Current state of the bag is:", self._bag)
+            print("DEBUG - LineClearEngine:",
+                  self.current_piece, "added to the grid")
+            print("DEBUG - LineClearEngine:",
+                  self.next_queue[-1], "pulled from the bag")
+            print(
+                "DEBUG - LineClearEngine: Current state of the bag is:",
+                self._bag
+            )
 
     def _falling_phase(self):
         while self._check_movement_possible():
@@ -413,7 +431,7 @@ class TetrisEngine:
     def _hard_drop(self):
         """Hard Drop the current piece."""
         if self._debug:
-            print("DEBUG: Hard Dropping")
+            print("DEBUG - LineClearEngine: Hard Dropping")
 
         while self._check_movement_possible():
             self._move_current_piece()
@@ -434,7 +452,10 @@ class TetrisEngine:
                     A: Rotation anti-clockwise
         """
         if self._debug:
-            print("DEBUG: Moving current piece in direction:", direction)
+            print(
+                "DEBUG - LineClearEngine: Moving current piece in direction:",
+                direction
+            )
         # Preserve the last position for updating later
         old_piece = self.current_piece
         # If the direction is a move
@@ -463,7 +484,7 @@ class TetrisEngine:
         if old_piece != self.current_piece:
             self._update_grid_with_current_piece()
             if self._debug:
-                print("DEBUG: Piece moved")
+                print("DEBUG - LineClearEngine: Piece moved")
 
     def _check_movement_possible(self, direction="D"):
         """Check if the current piece is blocked from moving in a direction.
@@ -478,7 +499,10 @@ class TetrisEngine:
             A boolean determining if a movement in the direction is possible.
         """
         if self._debug:
-            print("DEBUG: Checking if piece movement is possible:", direction)
+            print(
+                "DEBUG - LineClearEngine: Checking if movement is possible:",
+                direction
+            )
 
         # Get a list of the blocks
         blocks = [self.current_piece["block" + str(i)] for i in range(1, 5)]
@@ -499,7 +523,7 @@ class TetrisEngine:
             target = self.grid[row + row_delta][col + col_delta]
             if target in range(1, 8):
                 if self._debug:
-                    print("DEBUG: Tetrimino is blocked")
+                    print("DEBUG - LineClearEngine: Tetrimino is blocked")
                 return False
 
     def _super_rotation(self, clockwise):
@@ -523,7 +547,7 @@ class TetrisEngine:
         Check each row in turn and if it is full then mark it to be deleted.
         """
         if self._debug:
-            print("DEBUG: Checking for line clears")
+            print("DEBUG - LineClearEngine: Checking for line clears")
 
         rows_to_clear = []
         # Loop through each row
@@ -547,7 +571,8 @@ class TetrisEngine:
         # Update the lines cleared stat
         self.stats["lines"] += len(rows_to_clear)
         if self._debug:
-            print("DEBUG: Lines cleared updated to:", self.stats["lines"])
+            print("DEBUG - LineClearEngine: Lines cleared updated to:",
+                  self.stats["lines"])
 
     def _clear_rows(self, rows):
         """Clear the given rows from the grid.
@@ -560,7 +585,8 @@ class TetrisEngine:
             self.grid.append([0 for i in range(10)])
 
         if self._debug:
-            print("DEBUG: Rows:", rows, "cleared from the grid")
+            print("DEBUG - LineClearEngine: Rows:",
+                  rows, "cleared from the grid")
 
     def _completion_phase(self):
         """Finalise the round and prepare for the next generation."""
@@ -568,14 +594,14 @@ class TetrisEngine:
         # Check if level up has occured
         if self.stats["goal"] <= self.stats["lines"]:
             if self._debug:
-                print("DEBUG: Level Up Occured")
+                print("DEBUG - LineClearEngine: Level Up Occured")
 
             self.stats["level"] += 1
             self.stats["goal"] += self.stats["level"] * 5
 
 
 if __name__ == "__main__":
-    engine = TetrisEngine(debug=True)
+    engine = LineClearEngine(debug=True)
     engine._create_grid()
     engine.current_piece = {
         "type": "T",
