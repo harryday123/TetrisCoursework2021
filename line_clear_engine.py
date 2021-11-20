@@ -94,7 +94,7 @@ class LineClearEngine:
             debug: Determines whether to run the engine in debug mode
         """
         if debug:
-            print("DEBUG - LineClearEngine: Running LineClearEngine.__init__()")
+            print("DEBUG - LineClearEngine: Running LineClearEngine.__init__")
 
         self._debug = debug
         self._game_options = None
@@ -164,7 +164,7 @@ class LineClearEngine:
 
         if self._debug:
             print(
-                "DEBUG - LineClearEngine: Generated output for save. Written to",
+                "DEBUG - LineClearEngine: Output made for save. Output to:",
                 file_name
             )
             # print(*lines, sep='\n')
@@ -295,7 +295,10 @@ class LineClearEngine:
 
         output_list.sort(key=lambda x: x[1])
         if self._debug:
-            print("DEBUG - LineClearEngine: Leaderboard Generated: ", output_list)
+            print(
+                "DEBUG - LineClearEngine: Leaderboard Generated: ",
+                output_list
+            )
 
         return output_list
 
@@ -329,6 +332,12 @@ class LineClearEngine:
 
         if self._debug:
             print("DEBUG - LineClearEngine: Game Started")
+
+        # while self.game_running:
+        #     self._generation_phase()
+        #     self._falling_phase()
+        #
+        #
 
     def _generation_phase(self):
         """Generate a Tetrimino to add to the matrix."""
