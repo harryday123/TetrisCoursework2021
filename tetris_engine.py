@@ -427,9 +427,9 @@ class TetrisEngine:
                         row + row_delta
                     )
         elif direction == "C":
-            pass
+            self._super_rotation(True)
         elif direction == "A":
-            pass
+            self._super_rotation(False)
 
         # After any movement update the grid
         if old_piece != self.current_piece:
@@ -471,6 +471,21 @@ class TetrisEngine:
                 if self._debug:
                     print("DEBUG: Tetrimino is blocked")
                 return False
+
+    def _super_rotation(self, clockwise):
+        """Perform a super rotation if possible on the current piece.
+
+        Attempts to perform a super rotation on the current piece in the
+        direction given.
+
+        Args:
+            clockwise: A boolean that determines if the rotation is clockwise.
+        """
+        # Cannot rotate the O Tetrimino
+        if self.current_piece["type"] == "O":
+            return
+        # TODO: Add rotations as an option
+        pass
 
 
 if __name__ == "__main__":
