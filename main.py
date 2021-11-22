@@ -16,6 +16,10 @@ class LineClearApplication(tk.Frame):
     Attributes:
         parent: The parent of the frame (normally the root)
         engine: The TetrisEngine object to use to run the game
+        _next_queue_frame: The Next Queue Frame
+        _matrix_frame: The Matrix Frame
+        _hold_queue_frame: The Hold Queue Frame
+        _stats_frame: The Stats Frame
     """
 
     def __init__(self, engine, parent, *args, **kwargs):
@@ -33,20 +37,27 @@ class LineClearApplication(tk.Frame):
         self.parent = parent
         self.engine = engine
         # Subframes
-        self.next_queue_frame = NextQueue(self, *args, **kwargs)
-        self.matrix_frame = Matrix(self, *args, **kwargs)
-        self.hold_queue_frame = HoldQueue(self, *args, **kwargs)
-        self.stats_frame = Stats(self, *args, **kwargs)
+        self._next_queue_frame = NextQueue(self, *args, **kwargs)
+        self._matrix_frame = Matrix(self, *args, **kwargs)
+        self._hold_queue_frame = HoldQueue(self, *args, **kwargs)
+        self._stats_frame = Stats(self, *args, **kwargs)
 
         # Place Subframes
-        self.hold_queue_frame.grid(column=1, row=1)
-        self.stats_frame.grid(column=1, row=2)
-        self.matrix_frame.grid(column=2, row=1, rowspan=2)
-        self.next_queue_frame.grid(column=3, row=1, rowspan=2)
+        self._hold_queue_frame.grid(column=1, row=1)
+        self._stats_frame.grid(column=1, row=2)
+        self._matrix_frame.grid(column=2, row=1, rowspan=2)
+        self._next_queue_frame.grid(column=3, row=1, rowspan=2)
 
 
 class NextQueue(tk.Frame):
-    """The frame to show the next queue."""
+    """The frame to show the next queue.
+
+    Attributes:
+        _piece_file_map: A dictionary to map a piece to its image file
+        parent: The parent of the Frame
+        queue_images: A list of PhotoImages in the queue
+        queue_images_lbls: A list containing the labels displaying the queue
+    """
 
     _piece_file_map = {
         "O": "./assets/images/skinny/O-Piece.png",
@@ -60,6 +71,7 @@ class NextQueue(tk.Frame):
 
     def __init__(self, parent, *args, **kwargs):
         """Initialise the Frame."""
+        self.parent = parent
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.configure(height=800, width=200)
 
@@ -94,31 +106,118 @@ class NextQueue(tk.Frame):
 
 
 class Matrix(tk.Frame):
-    """The frame to show the matrix."""
+    """The frame to show the matrix.
+
+    Attributes:
+        parent: The parent of the Frame
+        current_grid: The current state of the grid
+        matrix:
+            Holds the shapes in the grid.
+            Canvas origin is top left, therefore the matrix's first list is
+            actually the last list in the engine. The first list draws the top
+            row.
+        canvas: The canvas widget that the matrix is drawn on
+    """
 
     def __init__(self, parent, *args, **kwargs):
         """Initialise the Frame."""
+        self.parent = parent
         tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.matrix = [[0 for i in range(10)] for r in range(22)]
-        self.configure(height=800, width=400, bg="blue")
+        self.configure(height=800, width=400)
 
-    def update_matrix(self, matrix):
-        """Update the matrix.
+        self.current_grid = [[0 for i in range(10)] for r in range(22)]
+        self.canvas = tk.Canvas(self, height=800, width=400)
+        self.matrix = []
+        self._create_empty_matrix()
+        self.canvas.pack()
+
+    def _create_empty_matrix(self):
+        """Create a matrix filled with black squares."""
+        self.matrix = []
+        for row_num in range(20):
+            row = []
+            for col_num in range(10):
+                row.append(
+                    self.canvas.create_rectangle(
+                        # First row is the top left of the square
+                        col_num * 40, row_num * 40,
+                        # Second row is just outside the bottom left of the
+                        # square hence the +1 after the multiplication
+                        ((col_num + 1) * 40) + 1, ((row_num + 1) * 40) + 1,
+                        fill="black"
+                    )
+                )
+            self.matrix.append(row)
+
+    def _update_matrix_cell(self, type, row, col):
+        """Update the colour of a single cell in the Matrix.
 
         Args:
-            matrix: The updated grid
+            type: The type of piece now in the cell
+            row: The row number of the cell (tkinter origin)
+            col: The column number of the cell (tkinter origin)
         """
-        self.matrix = matrix
+        _grid_piece_colour_map = {
+            "1": "yellow",
+            "2": "#40bbe3",
+            "3": "magenta",
+            "4": "ff8000",
+            "5": "blue",
+            "6": "green",
+            "7": "red"
+        }
+        self.canvas.itemconfig(
+            self.matrix[row][col],
+            fill=_grid_piece_colour_map[type]
+        )
+
+    def _update_matrix(self, changes):
+        """Redraw the matrix with the current grid.
+
+        Attributes:
+            changes: A list of tuples containing the coords of changed cells
+        """
+        for (col, row) in changes:
+            new_value = str(self.current_grid[row][col])
+            self._update_matrix_cell(new_value, row, col)
+
+    def update_grid(self, grid):
+        """Update the grid.
+
+        Args:
+            grid: The updated grid
+        """
+        changes = []
+        for row in range(20):
+            i = 0
+            for (n, m) in zip(self.current_grid[row], grid[row]):
+                if n != m:
+                    changes.append((i, row))
+                i += 1
+
+        self.current_grid = list(reversed(grid))
+        self._update_matrix(changes)
 
 
 class HoldQueue(tk.Frame):
     """The frame to show the hold queue.
 
     Attributs:
+        _piece_file_map: A dictionary to map a piece to its image file
         parent: The parent of this Frame
         piece_image = The PhotoImage for the hold queue label
-        piece_Lbl: The Label displaying the image
+        piece_lbl: The Label displaying the image
     """
+
+    _piece_file_map = {
+        "O": "./assets/images/O-Piece.png",
+        "I": "./assets/images/I-Piece.png",
+        "T": "./assets/images/T-Piece.png",
+        "L": "./assets/images/L-Piece.png",
+        "J": "./assets/images/J-Piece.png",
+        "S": "./assets/images/S-Piece.png",
+        "Z": "./assets/images/Z-Piece.png"
+    }
 
     def __init__(self, parent, *args, **kwargs):
         """Initialise the Frame."""
@@ -127,8 +226,8 @@ class HoldQueue(tk.Frame):
         self.configure(height=200, width=200)
 
         self.piece_image = None
-        self.piece_Lbl = tk.Label(self, image=self.piece_image, bg="#616161")
-        self.piece_Lbl.pack()
+        self.piece_lbl = tk.Label(self, image=self.piece_image, bg="#616161")
+        self.piece_lbl.pack()
 
     def update_queue(self, queue):
         """Update the queue.
@@ -136,14 +235,25 @@ class HoldQueue(tk.Frame):
         Args:
             queue: A character representing the hold piece.
         """
-        file_name = "./assets/images/" + queue + "-Piece.png"
-        newimg = tk.PhotoImage(file=file_name)
-        self.piece_Lbl.configure(image=newimg)
-        self.piece_Lbl.image = newimg
+        newimg = tk.PhotoImage(file=self._piece_file_map[queue])
+        self.piece_lbl.configure(image=newimg)
+        self.piece_lbl.image = newimg
 
 
 class Stats(tk.Frame):
-    """The frame to show the stats section."""
+    """The frame to show the stats section.
+
+    Attributes:
+        parent: The parent of the Frame
+        score: The current score
+        lines: The number of lines the player has cleared
+        level: The current level
+        goal: The number of lines needed to clear to level up
+        score_lbl: The Label containing the score
+        lines_lbl: The Label containing the lines
+        level_lbl: The Label containing the level
+        goal_lbl: The Label containing the goal
+    """
 
     def __init__(self, parent, *args, **kwargs):
         """Initialise the Frame."""
