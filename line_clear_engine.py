@@ -539,11 +539,170 @@ class LineClearEngine:
         Args:
             clockwise: A boolean that determines if the rotation is clockwise.
         """
+        type = self.current_piece["type"]
         # Cannot rotate the O piece
-        if self.current_piece["type"] == "O":
+        if type == "O":
             return
-        # TODO: Add rotations as an option
-        pass
+        # A dictionary showing which block is the centre of each piece
+        centre_point_map = {
+            "O": "block3",
+            "I": "block2",
+            "T": "block3",
+            "L": "block3",
+            "J": "block3",
+            "S": "block4",
+            "Z": "block3"
+        }
+
+        # Maps a direction to a tuple containing the adjacent directions
+        rotation_map = {
+            "N": ("W", "E"),
+            "E": ("N", "S"),
+            "S": ("E", "W"),
+            "W": ("S", "N")
+        }
+
+        # Get the coordinates of the centre block
+        centre_coords = self.current_piece[
+            centre_point_map[type]
+        ]
+
+        # Save the new locations for each block
+        new_block_coords = []
+        for i in range(1, 5):
+            # For each block in the piece
+            # Get the block's new coords after it has been rotated.
+            new_block_coords.append(self._calculate_block_rotation(
+                self.current_piece["block" + str(i)],
+                centre_coords,
+                clockwise
+            ))
+
+        if self._debug:
+            print("DEBUG - LineClearEngine: Coordinates generated after block",
+                  "rotation")
+
+        # Check that the rotation is possible with the offsets
+        self._check_offsets(
+            type,
+            new_block_coords,
+            self.current_piece["facing"],
+            rotation_map[type][clockwise]
+        )
+
+    def _check_offsets(self, type, block_coords, old_facing, new_facing):
+        """Check if a rotation is possible via the offsets.
+
+        Args:
+            old_facing: The direction the piece was originally facing
+            new_facing: The direction the piece is now facing
+
+        Returns:
+            bool: Shows if the rotation is possible
+        """
+        if self._debug:
+            print("DEBUG - LineClearEngine: Checking offsets for possible",
+                  "rotation")
+
+        offsets = {
+            "I": {
+                1: {"N": (0, 0), "E": (-1, 0), "S": (-1, 1), "W": (0, 1)},
+                2: {"N": (-1, 0), "E": (0, 0), "S": (1, 1), "W": (0, 1)},
+                3: {"N": (2, 0), "E": (0, 0), "S": (-2, 1), "W": (0, 1)},
+                4: {"N": (-1, 0), "E": (0, 1), "S": (1, 0), "W": (0, -1)},
+                5: {"N": (2, 0), "E": (0, -2), "S": (-2, 0), "W": (0, 1)}
+            }
+        }
+
+        possible = False
+        offset = None
+
+        for i in range(5):
+            offset_1 = offsets[type][i][old_facing]
+            offset_2 = offsets[type][i][new_facing]
+            offset = (offset_1[0] - offset_2[0], offset_1[1] - offset_2[1])
+            if self._check_piece_can_move_by_offset(block_coords, offset):
+                possible = True
+                break
+
+        if possible:
+            if self._debug:
+                print("DEBUG - LineClearEngine: Possible rotation found.")
+            self._rotate_current_piece(block_coords, offset)
+        else:
+            if self._debug:
+                print("DEBUG - LineClearEngine: Rotation not possible.")
+
+    def _rotate_current_piece(self, block_coords, offset):
+        """Rotate the current piece to the new coordinates.
+
+        Args:
+            block_coords: The new coordinates of the blocks after rotation
+            offset: The offset to apply to the coordinates
+        """
+        for i in range(1, 5):
+            self.current_piece["block" + str(i)] = (
+                block_coords[i - 1][0] + offset[0],
+                block_coords[i - 1][1] + offset[1]
+            )
+
+        if self._debug:
+            print("DEBUG - LineClearEngine: Current Piece Rotated")
+
+        self._update_grid_with_current_piece()
+
+    def _check_piece_can_move_by_offset(self, block_coords, offset):
+        """Check if the can move by a given offset.
+
+        Args:
+            block_coords: The new block cordinates
+            offset: The offset to shift the piece by
+
+        Returns:
+            bool: True if the offset is possible or not
+        """
+        if self._debug:
+            print("DEBUG - LineClearEngine: Checking offset is legal")
+        # For each block in the piece
+        for (col, row) in block_coords:
+            # Calculate the new coords with the offset
+            (new_col, new_row) = (col + offset[0], row + offset[1])
+
+            # Check if the block is currently filled with a block
+            if self.grid[new_col][new_row] in range(1, 8):
+                # For each block in the current piece
+                for i in range(1, 5):
+                    # Check that the current piece is not the block in the way
+                    if not (new_col,
+                            new_row) == self.current_piece["block" + str(i)]:
+                        # If the block in the way is not the current piece then
+                        # this offset will not work
+                        if self._debug:
+                            print("DEBUG - LineClearEngine: Offset blocked")
+                        return False
+        return True
+
+    def _calculate_block_rotation(self, coords, center, clockwise):
+        """Rotate a block 90 degrees about a center of rotation.
+
+        Args:
+            coords: The coordinates for the block
+            center: Coordinates for the center of rotation
+            clockwise: True for clockwise, false for anti-clockwise
+        """
+        rel_pos_to_center = (coords[0] - center[0], coords[1] - center[1])
+        rot_mat = [[0, 1], [-1, 0]] if clockwise else [[0, -1], [1, 0]]
+
+        new_rel_coords = (
+            (rot_mat[0][0] * rel_pos_to_center[0]) +
+            (rot_mat[0][1] * rel_pos_to_center[1]),
+            (rot_mat[0][0] * rel_pos_to_center[0]) +
+            (rot_mat[0][1] * rel_pos_to_center[1])
+        )
+        if self._debug:
+            print("DEBUG - LineClearEngine: New coordinates after rotation",
+                  "calculated")
+        return (coords[0] + new_rel_coords[0], coords[1] + new_rel_coords[1])
 
     def _pattern_match(self):
         """Check the grid for lines to be cleared.
