@@ -56,8 +56,6 @@ class LineClearApp(tk.Frame):
 
         self.engine._generation_phase()
         self._matrix_frame.update_grid(self.engine.grid)
-        print("Engine Grid", self.engine.grid)
-        print("App Grid", self._matrix_frame.current_grid)
 
 
 class NextQueue(tk.Frame):
@@ -192,7 +190,7 @@ class Matrix(tk.Frame):
             1: "yellow",
             2: "#40bbe3",
             3: "magenta",
-            4: "ff8000",
+            4: "#ff8000",
             5: "blue",
             6: "green",
             7: "red"
@@ -214,13 +212,19 @@ class Matrix(tk.Frame):
 
         Attributes:
             changes: A list of tuples containing the coords of changed cells
+
+        Important:
+            The coordinates for the input should be relative to the grid.
+            So the origin for those coordinates should be 2 rows higher than
+            the origin of the matrix (2 rows above the matrix are for
+            generation)
         """
         if self._debug:
             print("DEBUG - Matrix: Updating Matrix")
 
         for (col, row) in changes:
             new_value = self.current_grid[row][col]
-            self._update_matrix_cell(new_value, row, col)
+            self._update_matrix_cell(new_value, row - 2, col)
 
     def update_grid(self, grid):
         """Update the grid.
@@ -234,7 +238,8 @@ class Matrix(tk.Frame):
         grid = list(reversed(grid))
 
         changes = []
-        for row in range(20):
+        # Searching in rows 2-21 as first two rows are off the top of the grid
+        for row in range(2, 22):
             i = 0
             for (n, m) in zip(self.current_grid[row], grid[row]):
                 if n != m:
