@@ -54,11 +54,21 @@ class LineClearApp(tk.Frame):
         self._matrix_frame.grid(column=2, row=1, rowspan=2)
         self._next_queue_frame.grid(column=3, row=1, rowspan=2)
 
+        # Initial Testing Setup stuff
         self.engine._generation_phase()
         self._matrix_frame.update_grid(self.engine.grid)
         self.engine.move_current_piece()
         self._matrix_frame.update_grid(self.engine.grid)
         self.engine.move_current_piece()
+        self._matrix_frame.update_grid(self.engine.grid)
+
+        self.update_ui_panels()
+
+    def update_ui_panels(self):
+        """Mass update all UI panels with one function."""
+        self._hold_queue_frame.update_queue(self.engine.hold_queue)
+        self._next_queue_frame.update_queue(self.engine.next_queue)
+        # TODO: Update scoreboard
         self._matrix_frame.update_grid(self.engine.grid)
 
 
@@ -112,6 +122,9 @@ class NextQueue(tk.Frame):
         Args:
             queue: A list of characters representing the next pieces.
         """
+        if queue is None:
+            return
+
         if self._debug:
             print("DEBUG - NextQueue: Updating Queue")
 
@@ -224,10 +237,7 @@ class Matrix(tk.Frame):
         """
         print("Hold Queue Swap")
         self.parent.engine.hold_swap()
-        self.parent._hold_queue_frame.update_queue(
-            self.parent.engine.hold_queue
-        )
-        self.update_grid(self.parent.engine.grid)
+        self.parent.update_ui_panels()
 
     def _rotate_left(self, event):
         """Handle an anti-cockwise rotation input from the user.
@@ -387,6 +397,9 @@ class HoldQueue(tk.Frame):
         Args:
             queue: A character representing the hold piece.
         """
+        if queue is None:
+            return
+
         if self._debug:
             print("DEBUG - HoldQueue: Updating Hold Queue")
 
