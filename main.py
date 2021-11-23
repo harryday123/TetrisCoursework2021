@@ -8,7 +8,7 @@ import tkinter as tk
 from line_clear_engine import LineClearEngine
 
 
-class LineClearApplication(tk.Frame):
+class LineClearApp(tk.Frame):
     """The main frame for the Tetris game.
 
     Contains all the relevant GUI for the tetris game.
@@ -22,7 +22,7 @@ class LineClearApplication(tk.Frame):
         _stats_frame: The Stats Frame
     """
 
-    def __init__(self, engine, parent, *args, **kwargs):
+    def __init__(self, engine, parent, debug=False, *args, **kwargs):
         """Initialise the LineClearApplication object.
 
         Initialises the class with a parent and any arguments
@@ -36,17 +36,28 @@ class LineClearApplication(tk.Frame):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
         self.engine = engine
+
+        self._debug = debug
+
+        if self._debug:
+            print("DEBUG - LineClearApp: Running __init__")
+
         # Subframes
-        self._next_queue_frame = NextQueue(self, *args, **kwargs)
-        self._matrix_frame = Matrix(self, *args, **kwargs)
-        self._hold_queue_frame = HoldQueue(self, *args, **kwargs)
-        self._stats_frame = Stats(self, *args, **kwargs)
+        self._next_queue_frame = NextQueue(self, debug=debug, *args, **kwargs)
+        self._matrix_frame = Matrix(self, debug=debug, *args, **kwargs)
+        self._hold_queue_frame = HoldQueue(self, debug=debug, *args, **kwargs)
+        self._stats_frame = Stats(self, debug=debug, *args, **kwargs)
 
         # Place Subframes
         self._hold_queue_frame.grid(column=1, row=1)
         self._stats_frame.grid(column=1, row=2)
         self._matrix_frame.grid(column=2, row=1, rowspan=2)
         self._next_queue_frame.grid(column=3, row=1, rowspan=2)
+
+        self.engine._generation_phase()
+        self._matrix_frame.update_grid(self.engine.grid)
+        print("Engine Grid", self.engine.grid)
+        print("App Grid", self._matrix_frame.current_grid)
 
 
 class NextQueue(tk.Frame):
@@ -69,11 +80,16 @@ class NextQueue(tk.Frame):
         "Z": "./assets/images/skinny/Z-Piece.png"
     }
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, debug=False, *args, **kwargs):
         """Initialise the Frame."""
         self.parent = parent
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.configure(height=800, width=200)
+
+        self._debug = debug
+
+        if self._debug:
+            print("DEBUG - NextQueue: Running __init__")
 
         # Set up the queue images initially
         self.queue_images = [None] * 6
@@ -94,6 +110,9 @@ class NextQueue(tk.Frame):
         Args:
             queue: A list of characters representing the next pieces.
         """
+        if self._debug:
+            print("DEBUG - NextQueue: Updating Queue")
+
         # Create new PhotoImages
         self.queue_images = [
             tk.PhotoImage(file=self._piece_file_map[type]) for type in queue
@@ -103,6 +122,9 @@ class NextQueue(tk.Frame):
         for i in range(len(self.queue_images_lbls)):
             self.queue_images_lbls[i].configure(image=self.queue_images[i])
             self.queue_images_lbls[i].image = self.queue_images[i]
+
+        if self._debug:
+            print("DEBUG - NextQueue: Queue Updated")
 
 
 class Matrix(tk.Frame):
@@ -119,11 +141,16 @@ class Matrix(tk.Frame):
         canvas: The canvas widget that the matrix is drawn on
     """
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, debug=False, *args, **kwargs):
         """Initialise the Frame."""
         self.parent = parent
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.configure(height=800, width=400)
+
+        self._debug = debug
+
+        if self._debug:
+            print("DEBUG - Matrix: Running __init__")
 
         self.current_grid = [[0 for i in range(10)] for r in range(22)]
         self.canvas = tk.Canvas(self, height=800, width=400)
@@ -149,6 +176,9 @@ class Matrix(tk.Frame):
                 )
             self.matrix.append(row)
 
+        if self._debug:
+            print("DEBUG - Matrix: Empty Matrix Created")
+
     def _update_matrix_cell(self, type, row, col):
         """Update the colour of a single cell in the Matrix.
 
@@ -158,18 +188,26 @@ class Matrix(tk.Frame):
             col: The column number of the cell (tkinter origin)
         """
         _grid_piece_colour_map = {
-            "1": "yellow",
-            "2": "#40bbe3",
-            "3": "magenta",
-            "4": "ff8000",
-            "5": "blue",
-            "6": "green",
-            "7": "red"
+            0: "black",
+            1: "yellow",
+            2: "#40bbe3",
+            3: "magenta",
+            4: "ff8000",
+            5: "blue",
+            6: "green",
+            7: "red"
         }
         self.canvas.itemconfig(
             self.matrix[row][col],
             fill=_grid_piece_colour_map[type]
         )
+
+        if self._debug:
+            print(
+                "DEBUG - Matrix: Matrix Cell at row", row,
+                "and col", col,
+                "updated to colour", _grid_piece_colour_map[type]
+            )
 
     def _update_matrix(self, changes):
         """Redraw the matrix with the current grid.
@@ -177,8 +215,11 @@ class Matrix(tk.Frame):
         Attributes:
             changes: A list of tuples containing the coords of changed cells
         """
+        if self._debug:
+            print("DEBUG - Matrix: Updating Matrix")
+
         for (col, row) in changes:
-            new_value = str(self.current_grid[row][col])
+            new_value = self.current_grid[row][col]
             self._update_matrix_cell(new_value, row, col)
 
     def update_grid(self, grid):
@@ -187,6 +228,11 @@ class Matrix(tk.Frame):
         Args:
             grid: The updated grid
         """
+        if self._debug:
+            print("DEBUG - Matrix: Updating Grid")
+
+        grid = list(reversed(grid))
+
         changes = []
         for row in range(20):
             i = 0
@@ -195,7 +241,10 @@ class Matrix(tk.Frame):
                     changes.append((i, row))
                 i += 1
 
-        self.current_grid = list(reversed(grid))
+        if self._debug:
+            print("DEBUG - Matrix: Grid found", len(changes), "changes")
+
+        self.current_grid = grid
         self._update_matrix(changes)
 
 
@@ -219,11 +268,16 @@ class HoldQueue(tk.Frame):
         "Z": "./assets/images/Z-Piece.png"
     }
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, debug=False, *args, **kwargs):
         """Initialise the Frame."""
         self.parent = parent
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.configure(height=200, width=200)
+
+        self._debug = debug
+
+        if self._debug:
+            print("DEBUG - HoldQueue: Running __init__")
 
         self.piece_image = None
         self.piece_lbl = tk.Label(self, image=self.piece_image, bg="#616161")
@@ -235,6 +289,9 @@ class HoldQueue(tk.Frame):
         Args:
             queue: A character representing the hold piece.
         """
+        if self._debug:
+            print("DEBUG - HoldQueue: Updating Hold Queue")
+
         newimg = tk.PhotoImage(file=self._piece_file_map[queue])
         self.piece_lbl.configure(image=newimg)
         self.piece_lbl.image = newimg
@@ -255,10 +312,16 @@ class Stats(tk.Frame):
         goal_lbl: The Label containing the goal
     """
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, debug=False, *args, **kwargs):
         """Initialise the Frame."""
         self.parent = parent
         tk.Frame.__init__(self, parent, *args, **kwargs)
+
+        self._debug = debug
+
+        if self._debug:
+            print("DEBUG - Stats: Running __init__")
+
         self.score = tk.StringVar(self, value="0")
         self.lines = tk.StringVar(self, value="0")
         self.level = tk.StringVar(self, value="0")
@@ -288,6 +351,9 @@ class Stats(tk.Frame):
         Args:
             stats: A dictionary representing the new stats to update
         """
+        if self._debug:
+            print("DEBUG - Stats: Updating Stats")
+
         self.score.set(str(score))
         self.lines.set(str(lines))
         self.level.set(str(level))
@@ -301,9 +367,10 @@ if __name__ == "__main__":
     root.title("Line Clearing Game")
     root.configure(bg="#616161")
 
-    # Create Canvas
-    # canvas = tk.Canvas(root, bg="gray", width=1600, height=900)
-    # canvas.pack()
-
-    LineClearApplication(LineClearEngine(), root, bg="#616161").pack()
+    LineClearApp(
+        LineClearEngine(debug=True),
+        root,
+        bg="#616161",
+        debug=True
+    ).pack()
     root.mainloop()

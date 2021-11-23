@@ -8,7 +8,7 @@ guidelines. More info at: https://tetris.fandom.com/wiki/Tetris_Guideline
 from csv import DictReader, DictWriter
 from datetime import datetime
 from ast import literal_eval
-from random import randint
+from random import randint, shuffle
 
 
 class LineClearEngine:
@@ -77,13 +77,13 @@ class LineClearEngine:
     """
 
     _grid_piece_map = {
-        "O": "1",
-        "I": "2",
-        "T": "3",
-        "L": "4",
-        "J": "5",
-        "S": "6",
-        "Z": "7"
+        "O": 1,
+        "I": 2,
+        "T": 3,
+        "L": 4,
+        "J": 5,
+        "S": 6,
+        "Z": 7
     }
 
     def __init__(self, debug=False, scoreboard="leaderboard.csv"):
@@ -122,7 +122,9 @@ class LineClearEngine:
         self._fallspeed = 0
 
         # Set the game options to their default values
+        self._init_next_queue()
         self.set_game_options()
+        self._create_grid()
 
     def _create_grid(self):
         """Create the grid property containing information on the grid.
@@ -334,16 +336,21 @@ class LineClearEngine:
         #
         #
 
+    def _init_next_queue(self):
+        self.next_queue = ["O", "I", "T", "L", "J", "S", "Z"]
+        shuffle(self.next_queue)
+
     def _generation_phase(self):
         """Generate a piece to add to the matrix."""
-        # Get the new piece type
-        new_type = self.next_queue.pop(0)
-
         # Add new piece to the next_queue
         if self._bag == []:
             self._bag = ["O", "I", "T", "L", "J", "S", "Z"]
+
+        # Get the new piece type
+        new_type = self.next_queue.pop(0)
+
         # Append to the queue a random piece in the bag
-        self.next_queue.append(self._bag.pop(randint(len(self._bag) - 1)))
+        self.next_queue.append(self._bag.pop(randint(0, len(self._bag) - 1)))
 
         # Create the new piece
         if new_type == "I":
@@ -413,11 +420,8 @@ class LineClearEngine:
         # Add the new piece to the grid
         self._update_grid_with_current_piece()
 
-        # Check if the piece can drop any further
-        if self._check_movement_possible():
-            self._move_current_piece()
-
         if self._debug:
+            print("DEBUG - LineClearEngine: Generation Phase Summary")
             print("DEBUG - LineClearEngine:",
                   self.current_piece, "added to the grid")
             print("DEBUG - LineClearEngine:",
@@ -426,6 +430,10 @@ class LineClearEngine:
                 "DEBUG - LineClearEngine: Current state of the bag is:",
                 self._bag
             )
+
+        # Check if the piece can drop any further
+        if self._check_movement_possible():
+            self._move_current_piece()
 
     def _falling_phase(self):
         while self._check_movement_possible():
@@ -460,8 +468,9 @@ class LineClearEngine:
                 "DEBUG - LineClearEngine: Moving current piece in direction:",
                 direction
             )
+
         # Preserve the last position for updating later
-        old_piece = self.current_piece
+        old_piece = self.current_piece.copy()
         # If the direction is a move
         if direction in "LRD":
             # Check if the move is possible
@@ -486,7 +495,7 @@ class LineClearEngine:
 
         # After any movement update the grid
         if old_piece != self.current_piece:
-            self._update_grid_with_current_piece()
+            self._update_grid_with_current_piece(old_piece=old_piece)
             if self._debug:
                 print("DEBUG - LineClearEngine: Piece moved")
 
@@ -524,11 +533,14 @@ class LineClearEngine:
 
         for (col, row) in blocks:
             # Check if the blow directly below it is occupied
-            target = self.grid[row + row_delta][col + col_delta]
-            if target in range(1, 8):
+            (new_col, new_row) = (col + col_delta, row + row_delta)
+            target = self.grid[new_row][new_col]
+
+            if target in range(1, 8) and (new_col, new_row) not in blocks:
                 if self._debug:
-                    print("DEBUG - LineClearEngine: piece is blocked")
+                    print("DEBUG - LineClearEngine: Piece is blocked")
                 return False
+        return True
 
     def _super_rotation(self, clockwise):
         """Perform a super rotation if possible on the current piece.
