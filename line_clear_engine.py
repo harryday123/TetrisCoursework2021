@@ -60,6 +60,8 @@ class LineClearEngine:
             Shows whether the game is currently in progress
         game_paused:
             Shows whether the game is currently paused
+        _hold_available:
+            Determines if the current piece can swap into the hold queue
         _bag:
             The bag to generate pieces from
         latest_input:
@@ -118,6 +120,7 @@ class LineClearEngine:
         }
         self.game_running = False
         self.game_paused = False
+        self._hold_available = True
         self._bag = []
         self._fallspeed = 0
 
@@ -340,17 +343,34 @@ class LineClearEngine:
         self.next_queue = ["O", "I", "T", "L", "J", "S", "Z"]
         shuffle(self.next_queue)
 
-    def _generation_phase(self):
-        """Generate a piece to add to the matrix."""
-        # Add new piece to the next_queue
-        if self._bag == []:
-            self._bag = ["O", "I", "T", "L", "J", "S", "Z"]
+    def _generation_phase(self, type=None, old_piece=None):
+        """Generate a piece to add to the matrix.
 
-        # Get the new piece type
-        new_type = self.next_queue.pop(0)
+        Args:
+            type:
+                The type of the piece to generate.
+                Defaults to None. If None, the piece will be drawn from the bag
+            old_piece:
+                The old piece if one needs to be removed. Used when generating
+                a piece from the Hold Queue
+        """
+        # If the type has not been given then generate a piece from the bag
+        if type is None:
+            # Add new piece to the next_queue
+            if self._bag == []:
+                self._bag = ["O", "I", "T", "L", "J", "S", "Z"]
 
-        # Append to the queue a random piece in the bag
-        self.next_queue.append(self._bag.pop(randint(0, len(self._bag) - 1)))
+            # Get the new piece type
+            new_type = self.next_queue.pop(0)
+
+            # Append to the queue a random piece in the bag
+            self.next_queue.append(
+                self._bag.pop(randint(0, len(self._bag) - 1))
+            )
+        else:
+            # If the type has been given this is normally for a hold queue swap
+            # The bag is not affected
+            new_type = type
 
         # Create the new piece
         if new_type == "I":
@@ -418,22 +438,23 @@ class LineClearEngine:
             }
 
         # Add the new piece to the grid
-        self._update_grid_with_current_piece()
+        self._update_grid_with_current_piece(old_piece=old_piece)
 
         if self._debug:
             print("DEBUG - LineClearEngine: Generation Phase Summary")
             print("DEBUG - LineClearEngine:",
                   self.current_piece, "added to the grid")
-            print("DEBUG - LineClearEngine:",
-                  self.next_queue[-1], "pulled from the bag")
-            print(
-                "DEBUG - LineClearEngine: Current state of the bag is:",
-                self._bag
-            )
+            if type is not None:
+                print("DEBUG - LineClearEngine:",
+                      self.next_queue[-1], "pulled from the bag")
+                print(
+                    "DEBUG - LineClearEngine: Current state of the bag is:",
+                    self._bag
+                )
 
         # Check if the piece can drop any further
         if self._check_movement_possible():
-            self._move_current_piece()
+            self.move_current_piece()
 
     def _falling_phase(self):
         while self._check_movement_possible():
@@ -446,9 +467,30 @@ class LineClearEngine:
             print("DEBUG - LineClearEngine: Hard Dropping")
 
         while self._check_movement_possible():
-            self._move_current_piece()
+            self.move_current_piece()
 
-    def _move_current_piece(self, direction="D"):
+    def hold_swap(self):
+        """Swap the current piece into the hold queue if available."""
+        if self._hold_available:
+            # If the hold queue has a value to swap out
+            if self.hold_queue is not None:
+                current_type = self.current_piece["type"]
+                self._generation_phase(
+                    type=self.hold_queue,
+                    old_piece=self.current_piece
+                )
+                self.hold_queue = current_type
+            else:
+                # If the hold queue is empty
+                self.hold_queue = self.current_piece["type"]
+                self._generation_phase(
+                    old_piece=self.current_piece
+                )
+
+            # After swapping
+            self._hold_available = False
+
+    def move_current_piece(self, direction="D"):
         """Move the current piece based on the direction given.
 
         Given a direction, calculate if the input is possible and if it is then
@@ -678,7 +720,7 @@ class LineClearEngine:
             if self._check_piece_can_move_by_offset(block_coords, offset):
                 possible = True
                 if self._debug:
-                    print("Possible offset found:", i)
+                    print("DEBUG - LineClearEngine: Possible offset found:", i)
                 break
 
         if possible:
@@ -704,8 +746,6 @@ class LineClearEngine:
 
         if self._debug:
             print("DEBUG - LineClearEngine: Current Piece Rotated")
-
-        self._update_grid_with_current_piece()
 
     def _check_piece_can_move_by_offset(self, block_coords, offset):
         """Check if the can move by a given offset.
@@ -842,5 +882,5 @@ if __name__ == "__main__":
         "block3": (7, 4),
         "block4": (6, 5)
     }
-    engine._move_current_piece(direction="D")
+    engine.move_current_piece(direction="D")
     print(engine.current_piece)

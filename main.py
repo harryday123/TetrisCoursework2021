@@ -56,6 +56,10 @@ class LineClearApp(tk.Frame):
 
         self.engine._generation_phase()
         self._matrix_frame.update_grid(self.engine.grid)
+        self.engine.move_current_piece()
+        self._matrix_frame.update_grid(self.engine.grid)
+        self.engine.move_current_piece()
+        self._matrix_frame.update_grid(self.engine.grid)
 
 
 class NextQueue(tk.Frame):
@@ -139,6 +143,17 @@ class Matrix(tk.Frame):
         canvas: The canvas widget that the matrix is drawn on
     """
 
+    _keybind_map = {
+        "mv_left": "",
+        "mv_right": "",
+        "rt_clock": "",
+        "rt_anti": "",
+        "softdrop": "",
+        "harddrop": "",
+        "hold": "",
+        "pause": ""
+    }
+
     def __init__(self, parent, debug=False, *args, **kwargs):
         """Initialise the Frame."""
         self.parent = parent
@@ -154,7 +169,85 @@ class Matrix(tk.Frame):
         self.canvas = tk.Canvas(self, height=800, width=400)
         self.matrix = []
         self._create_empty_matrix()
+        self._init_keybinds()
+
         self.canvas.pack()
+
+    def _init_keybinds(self):
+        self.canvas.bind("<Left>", self._move_left)
+        self.canvas.bind("<Right>", self._move_right)
+        self.canvas.bind("<Down>", self._soft_drop)
+        self.canvas.bind("<Shift_L>", self._hold_swap)
+        self.canvas.bind("q", self._rotate_left)
+        self.canvas.bind("w", self._rotate_right)
+
+        self.canvas.focus_set()
+
+    # def test(self, event):
+    #     print('keysym:', event.keysym)
+
+    def _move_left(self, event):
+        """Handle a left movement input from the user.
+
+        Args:
+            event: The KeyPress event from the canvas
+        """
+        print("Move Left")
+        self.parent.engine.move_current_piece(direction="L")
+        self.update_grid(self.parent.engine.grid)
+
+    def _move_right(self, event):
+        """Handle a right movement input from the user.
+
+        Args:
+            event: The KeyPress event from the canvas
+        """
+        print("Move Right")
+        self.parent.engine.move_current_piece(direction="R")
+        self.update_grid(self.parent.engine.grid)
+
+    def _soft_drop(self, event):
+        """Handle a soft drop input from the user.
+
+        Args:
+            event: The KeyPress event from the canvas
+        """
+        print("Soft Drop")
+        # TODO: Implement this soft drop functionality
+        pass
+
+    def _hold_swap(self, event):
+        """Handle a hold swap input from the user.
+
+        Args:
+            event: The KeyPress event from the canvas
+        """
+        print("Hold Queue Swap")
+        self.parent.engine.hold_swap()
+        self.parent._hold_queue_frame.update_queue(
+            self.parent.engine.hold_queue
+        )
+        self.update_grid(self.parent.engine.grid)
+
+    def _rotate_left(self, event):
+        """Handle an anti-cockwise rotation input from the user.
+
+        Args:
+            event: The KeyPress event from the canvas
+        """
+        print("Rotate Anti-clockwise")
+        self.parent.engine.move_current_piece(direction="A")
+        self.update_grid(self.parent.engine.grid)
+
+    def _rotate_right(self, event):
+        """Handle a cockwise rotation input from the user.
+
+        Args:
+            event: The KeyPress event from the canvas
+        """
+        print("Rotate Clockwise")
+        self.parent.engine.move_current_piece(direction="C")
+        self.update_grid(self.parent.engine.grid)
 
     def _create_empty_matrix(self):
         """Create a matrix filled with black squares."""
