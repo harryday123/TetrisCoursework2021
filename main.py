@@ -235,7 +235,7 @@ class Matrix(tk.Frame):
         if self._debug:
             print("DEBUG - Matrix: Updating Grid")
 
-        grid = list(reversed(grid))
+        grid = list(reversed([row[:] for row in grid]))
 
         changes = []
         # Searching in rows 2-21 as first two rows are off the top of the grid

@@ -534,6 +534,11 @@ class LineClearEngine:
         for (col, row) in blocks:
             # Check if the blow directly below it is occupied
             (new_col, new_row) = (col + col_delta, row + row_delta)
+
+            # Check the new coords are in the Grid
+            if new_col not in range(10) or new_row not in range(22):
+                return False
+
             target = self.grid[new_row][new_col]
 
             if target in range(1, 8) and (new_col, new_row) not in blocks:
@@ -599,13 +604,15 @@ class LineClearEngine:
             type,
             new_block_coords,
             self.current_piece["facing"],
-            rotation_map[type][clockwise]
+            rotation_map[self.current_piece["facing"]][clockwise]
         )
 
     def _check_offsets(self, type, block_coords, old_facing, new_facing):
         """Check if a rotation is possible via the offsets.
 
         Args:
+            type: The type of piece
+            block_coords: The coordinates for the rotated blocks
             old_facing: The direction the piece was originally facing
             new_facing: The direction the piece is now facing
 
@@ -623,18 +630,55 @@ class LineClearEngine:
                 3: {"N": (2, 0), "E": (0, 0), "S": (-2, 1), "W": (0, 1)},
                 4: {"N": (-1, 0), "E": (0, 1), "S": (1, 0), "W": (0, -1)},
                 5: {"N": (2, 0), "E": (0, -2), "S": (-2, 0), "W": (0, 1)}
+            },
+            "L": {
+                1: {"N": (0, 0), "E": (0, 0), "S": (0, 0), "W": (0, 0)},
+                2: {"N": (0, 0), "E": (1, 0), "S": (0, 0), "W": (-1, 0)},
+                3: {"N": (0, 0), "E": (1, -1), "S": (0, 0), "W": (-1, -1)},
+                4: {"N": (0, 0), "E": (0, 2), "S": (0, 0), "W": (0, 2)},
+                5: {"N": (0, 0), "E": (1, 2), "S": (0, 0), "W": (-1, 2)}
+            },
+            "S": {
+                1: {"N": (0, 0), "E": (0, 0), "S": (0, 0), "W": (0, 0)},
+                2: {"N": (0, 0), "E": (1, 0), "S": (0, 0), "W": (-1, 0)},
+                3: {"N": (0, 0), "E": (1, -1), "S": (0, 0), "W": (-1, -1)},
+                4: {"N": (0, 0), "E": (0, 2), "S": (0, 0), "W": (0, 2)},
+                5: {"N": (0, 0), "E": (1, 2), "S": (0, 0), "W": (-1, 2)}
+            },
+            "T": {
+                1: {"N": (0, 0), "E": (0, 0), "S": (0, 0), "W": (0, 0)},
+                2: {"N": (0, 0), "E": (1, 0), "S": (0, 0), "W": (-1, 0)},
+                3: {"N": (0, 0), "E": (1, -1), "S": (0, 0), "W": (-1, -1)},
+                4: {"N": (0, 0), "E": (0, 2), "S": (0, 0), "W": (0, 2)},
+                5: {"N": (0, 0), "E": (1, 2), "S": (0, 0), "W": (-1, 2)}
+            },
+            "Z": {
+                1: {"N": (0, 0), "E": (0, 0), "S": (0, 0), "W": (0, 0)},
+                2: {"N": (0, 0), "E": (1, 0), "S": (0, 0), "W": (-1, 0)},
+                3: {"N": (0, 0), "E": (1, -1), "S": (0, 0), "W": (-1, -1)},
+                4: {"N": (0, 0), "E": (0, 2), "S": (0, 0), "W": (0, 2)},
+                5: {"N": (0, 0), "E": (1, 2), "S": (0, 0), "W": (-1, 2)}
+            },
+            "J": {
+                1: {"N": (0, 0), "E": (0, 0), "S": (0, 0), "W": (0, 0)},
+                2: {"N": (0, 0), "E": (1, 0), "S": (0, 0), "W": (-1, 0)},
+                3: {"N": (0, 0), "E": (1, -1), "S": (0, 0), "W": (-1, -1)},
+                4: {"N": (0, 0), "E": (0, 2), "S": (0, 0), "W": (0, 2)},
+                5: {"N": (0, 0), "E": (1, 2), "S": (0, 0), "W": (-1, 2)}
             }
         }
 
         possible = False
         offset = None
 
-        for i in range(5):
+        for i in range(1, 6):
             offset_1 = offsets[type][i][old_facing]
             offset_2 = offsets[type][i][new_facing]
             offset = (offset_1[0] - offset_2[0], offset_1[1] - offset_2[1])
             if self._check_piece_can_move_by_offset(block_coords, offset):
                 possible = True
+                if self._debug:
+                    print("Possible offset found:", i)
                 break
 
         if possible:
@@ -680,18 +724,30 @@ class LineClearEngine:
             # Calculate the new coords with the offset
             (new_col, new_row) = (col + offset[0], row + offset[1])
 
+            if new_col not in range(10) or new_row not in range(22):
+                if self._debug:
+                    print("DEBUG - LineClearEngine: Offset not in grid")
+                return False
+
             # Check if the block is currently filled with a block
-            if self.grid[new_col][new_row] in range(1, 8):
+            if self.grid[new_row][new_col] in range(1, 8):
+                held_by_current = False
+                # Aim of this for loop is to check if the block is trying to
+                # move into a block occupied by the current piece
                 # For each block in the current piece
                 for i in range(1, 5):
                     # Check that the current piece is not the block in the way
-                    if not (new_col,
+                    if (new_col,
                             new_row) == self.current_piece["block" + str(i)]:
-                        # If the block in the way is not the current piece then
-                        # this offset will not work
-                        if self._debug:
-                            print("DEBUG - LineClearEngine: Offset blocked")
-                        return False
+                        # If the piece is moving to a block currently held by
+                        # the current piece then exit the loop
+                        held_by_current = True
+                        break
+                if not held_by_current:
+                    if self._debug:
+                        print("DEBUG - LineClearEngine: Offset blocked")
+                    return False
+
         return True
 
     def _calculate_block_rotation(self, coords, center, clockwise):
@@ -708,13 +764,13 @@ class LineClearEngine:
         new_rel_coords = (
             (rot_mat[0][0] * rel_pos_to_center[0]) +
             (rot_mat[0][1] * rel_pos_to_center[1]),
-            (rot_mat[0][0] * rel_pos_to_center[0]) +
-            (rot_mat[0][1] * rel_pos_to_center[1])
+            (rot_mat[1][0] * rel_pos_to_center[0]) +
+            (rot_mat[1][1] * rel_pos_to_center[1])
         )
         if self._debug:
             print("DEBUG - LineClearEngine: New coordinates after rotation",
                   "calculated")
-        return (coords[0] + new_rel_coords[0], coords[1] + new_rel_coords[1])
+        return (center[0] + new_rel_coords[0], center[1] + new_rel_coords[1])
 
     def _pattern_match(self):
         """Check the grid for lines to be cleared.
