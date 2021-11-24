@@ -49,12 +49,34 @@ class LineClearApp(tk.Frame):
         self._stats_frame = Stats(self, debug=debug, *args, **kwargs)
         self._menu_frame = Menu(self, debug=debug, *args, **kwargs)
 
+        # Boss Key Image
+        self._boss_key_active = False
+        self._boss_key_image = tk.PhotoImage(
+            file="./assets/images/boss-key.png"
+        )
+        self._boss_key_lbl = tk.Label(self, image=self._boss_key_image)
+
         # Place Subframes
         self._hold_queue_frame.grid(column=1, row=1)
         self._stats_frame.grid(column=1, row=2)
         self._matrix_frame.grid(column=2, row=1, rowspan=2)
         self._menu_frame.grid(column=2, row=1, rowspan=2)
         self._next_queue_frame.grid(column=3, row=1, rowspan=2)
+
+    def toggle_boss_screen(self):
+        """Toggle the boss screen on and off."""
+        if self._debug:
+            print(
+                "DEBUG - LineClearApp: Boss Screen Toggled from:",
+                self._boss_key_active
+            )
+
+        if self._boss_key_active:
+            self._boss_key_lbl.grid_remove()
+        else:
+            self._boss_key_lbl.grid(column=1, row=1, columnspan=3, rowspan=2)
+
+        self._boss_key_active = not self._boss_key_active
 
     def update_ui_panels(self):
         """Mass update all UI panels with one function."""
@@ -244,6 +266,7 @@ class Matrix(tk.Frame):
 
     def _init_keybinds(self):
         self.canvas.bind("<Escape>", self._toggle_pause)
+        self.canvas.bind("b", self.toggle_boss_screen)
         self.canvas.bind("<KeyPress>", self._key_press)
         self.canvas.bind("<KeyRelease>", self._key_release)
         self.canvas.focus_set()
@@ -302,6 +325,12 @@ class Matrix(tk.Frame):
         if self._debug:
             print("DEBUG - Matrix: Action Performed: pause")
         self.parent.toggle_pause_game()
+
+    def toggle_boss_screen(self, event):
+        """Toggle the boss screen."""
+        if self._debug:
+            print("DEBUG - Matrix: Action Performed: boss_screen")
+        self.parent.toggle_boss_screen()
 
     def _create_empty_matrix(self):
         """Create a matrix filled with black squares."""
