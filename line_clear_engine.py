@@ -932,7 +932,7 @@ class LineClearEngine:
         Args:
             rows: The list of rows to remove
         """
-        for row in rows:
+        for row in list(reversed(rows)):
             self.grid.pop(row)
             self.grid.append([0 for i in range(10)])
 
