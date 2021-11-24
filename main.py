@@ -54,15 +54,9 @@ class LineClearApp(tk.Frame):
         self._matrix_frame.grid(column=2, row=1, rowspan=2)
         self._next_queue_frame.grid(column=3, row=1, rowspan=2)
 
-        # Initial Testing Setup stuff
+        # Begin the game
         self.engine._generation_phase()
-        self._matrix_frame.update_grid(self.engine.grid)
-        self.engine.move_current_piece()
-        self._matrix_frame.update_grid(self.engine.grid)
-        self.engine.move_current_piece()
-        self._matrix_frame.update_grid(self.engine.grid)
-
-        self.update_ui_panels()
+        self._main_run_loop()
 
     def update_ui_panels(self):
         """Mass update all UI panels with one function."""
@@ -70,6 +64,11 @@ class LineClearApp(tk.Frame):
         self._next_queue_frame.update_queue(self.engine.next_queue)
         # TODO: Update scoreboard
         self._matrix_frame.update_grid(self.engine.grid)
+
+    def _main_run_loop(self):
+        self.engine.falling_phase()
+        self.update_ui_panels()
+        self.parent.after(1000, self._main_run_loop)
 
 
 class NextQueue(tk.Frame):

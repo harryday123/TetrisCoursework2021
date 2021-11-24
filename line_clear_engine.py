@@ -74,7 +74,7 @@ class LineClearEngine:
              - Move_R
              - Rotate_C
              - Rotate_AC
-         _fallspeed:
+         fallspeed:
             The normal fall speed for the level. Defined in seconds per line.
     """
 
@@ -122,7 +122,7 @@ class LineClearEngine:
         self.game_paused = False
         self._hold_available = True
         self._bag = []
-        self._fallspeed = 0
+        self.fallspeed = 0
 
         # Set the game options to their default values
         self._init_next_queue()
@@ -329,15 +329,13 @@ class LineClearEngine:
     def start_game(self):
         """Start the game engine to play a game."""
         self.game_running = True
+        self.game_paused = False
+
+        self._set_fall_speed()
+        self._generation_phase()
 
         if self._debug:
             print("DEBUG - LineClearEngine: Game Started")
-
-        # while self.game_running:
-        #     self._generation_phase()
-        #     self._falling_phase()
-        #
-        #
 
     def _init_next_queue(self):
         self.next_queue = ["O", "I", "T", "L", "J", "S", "Z"]
@@ -456,10 +454,51 @@ class LineClearEngine:
         if self._check_movement_possible():
             self.move_current_piece()
 
-    def _falling_phase(self):
-        while self._check_movement_possible():
-            # TODO: Make the block fall and check for input
-            pass
+    def falling_phase(self):
+        """Run the Falling Phase of the engine.
+
+        This is the phase where the piece is constantly falling.
+        """
+        if self._debug:
+            print("DEBUG - LineClearEngine: Entering Falling Phase")
+
+        if self._check_movement_possible():
+            if self._debug:
+                print("DEBUG - LineClearEngine: Fall Possible")
+
+            self.move_current_piece()
+        else:
+            if self._debug:
+                print("DEBUG - LineClearEngine: Fall Not Possible")
+
+            self._lock_phase()
+
+    def _lock_phase(self):
+        """Run the Lock Phase of the engine.
+
+        This is the phase where the current piece has touched down onto a
+        surface.
+        """
+        if self._debug:
+            print("DEBUG - LineClearEngine: Entering Lock Phase")
+        # if self._game_options["lock_down"] == "Extended":
+        #     pass
+        # elif self._game_options["lock_down"] == "Classic":
+        #     pass
+        # else:
+        # TODO: Look into if the above is possible
+        self._pattern_match()
+        self._completion_phase()
+        self._generation_phase()
+
+    def _set_fall_speed(self):
+        if self.game_paused or not self.game_running:
+            self.fallspeed = 0
+        else:
+            # Update the fall speed
+            self.fallspeed = round(((
+                0.8 - ((self.stats["level"] - 1) * 0.007)
+            ) ** (self.stats["level"] - 1)) * 1000)
 
     def _hard_drop(self):
         """Hard Drop the current piece."""
@@ -494,7 +533,7 @@ class LineClearEngine:
         """Move the current piece based on the direction given.
 
         Given a direction, calculate if the input is possible and if it is then
-        execute the movement/rotation.
+        execute the movement / rotation.
 
         Args:
             direction:
@@ -503,7 +542,7 @@ class LineClearEngine:
                     R: Move right
                     D: Move down
                     C: Rotation clockwise
-                    A: Rotation anti-clockwise
+                    A: Rotation anti - clockwise
         """
         if self._debug:
             print(
@@ -796,7 +835,7 @@ class LineClearEngine:
         Args:
             coords: The coordinates for the block
             center: Coordinates for the center of rotation
-            clockwise: True for clockwise, false for anti-clockwise
+            clockwise: True for clockwise, false for anti - clockwise
         """
         rel_pos_to_center = (coords[0] - center[0], coords[1] - center[1])
         rot_mat = [[0, 1], [-1, 0]] if clockwise else [[0, -1], [1, 0]]
@@ -869,6 +908,7 @@ class LineClearEngine:
 
             self.stats["level"] += 1
             self.stats["goal"] += self.stats["level"] * 5
+            self._set_fall_speed()
 
 
 if __name__ == "__main__":
