@@ -120,6 +120,11 @@ class LineClearApp(tk.Frame):
             self._menu_frame.grid_remove()
             self._matrix_frame._update_matrix(None)
 
+    def save_game(self):
+        """Save the current game state and exit."""
+        self.engine.save_game()
+        self.play_again()
+
 
 class NextQueue(tk.Frame):
     """The frame to show the next queue.
@@ -567,6 +572,11 @@ class Menu(tk.Frame):
             command=self._play_again
         )
         self._pause_lbl = tk.Label(self, text="Game Paused")
+        self._save_and_exit_btn = tk.Button(
+            self,
+            text="Save and Exit",
+            command=self._save_and_exit
+        )
         self._continue_btn = tk.Button(
             self,
             text="Continue",
@@ -597,6 +607,7 @@ class Menu(tk.Frame):
         self.unpack_all()
 
         self._pause_lbl.pack()
+        self._save_and_exit_btn.pack()
         self._continue_btn.pack()
         self.focus_set()
 
@@ -607,6 +618,12 @@ class Menu(tk.Frame):
     def _load_game(self):
         """Run the command to load a game from a save."""
         self.parent.load_game()
+
+    def _save_and_exit(self):
+        """Save and Exit the Game."""
+        if self._debug:
+            print("DEBUG - Menu: Save and Exit Button Pressed")
+        self.parent.save_game()
 
     def _play_again(self):
         """Run the command to start the game."""
@@ -629,6 +646,7 @@ class Menu(tk.Frame):
         self._play_again_btn.pack_forget()
         self._pause_lbl.pack_forget()
         self._continue_btn.pack_forget()
+        self._save_and_exit_btn.pack_forget()
 
 
 if __name__ == "__main__":

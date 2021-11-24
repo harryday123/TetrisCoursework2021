@@ -142,7 +142,7 @@ class LineClearEngine:
         """
         today = datetime.now()
         formatted_time = today.strftime("%Y-%m-%d %H:%M")
-        file_name = formatted_time + ".txt"
+        file_name = "./saves/" + formatted_time + ".txt"
 
         lines = [
             formatted_time,
@@ -153,15 +153,15 @@ class LineClearEngine:
             str(self._game_options),
             str(self.grid)
         ]
+
         with open(file_name, mode='w') as f:
-            f.write("\n".join(lines))
+            f.write('\n'.join(str(line) for line in lines))
 
         if self._debug:
             print(
                 "DEBUG - LineClearEngine: Output made for save. Output to:",
                 file_name
             )
-            # print(*lines, sep='\n')
 
     def load_game(self, filename):
         """Load a saved game from the given file.
