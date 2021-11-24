@@ -147,11 +147,13 @@ class LineClearEngine:
         lines = [
             formatted_time,
             str(self.current_piece),
-            self.hold_queue,
+            [self.hold_queue],
             str(self.next_queue),
             str(self.stats),
             str(self._game_options),
-            str(self.grid)
+            str(self.grid),
+            self._hold_available,
+            str(self._bag)
         ]
 
         with open(file_name, mode='w') as f:
@@ -172,19 +174,22 @@ class LineClearEngine:
         with open(filename, mode='r') as f:
             lines = f.readlines()
 
+        print(lines[2].strip())
+
         self.current_piece = literal_eval(lines[1].strip())
-        self.hold_queue = lines[2].strip()
+        self.hold_queue = literal_eval(lines[2].strip())[0]
         self.next_queue = literal_eval(lines[3].strip())
         self.stats = literal_eval(lines[4].strip())
         self._game_options = literal_eval(lines[5].strip())
         self.grid = literal_eval(lines[6].strip())
+        self._hold_available = literal_eval(lines[7].strip())
+        self._bag = literal_eval(lines[8].strip())
 
         if self._debug:
             print(
                 "DEBUG - LineClearEngine: Opened save file and",
                 "retrieved stored data"
             )
-            # print(*lines)
 
     def _update_grid_position(self, row, col, type, ghost=False):
         """Update a grid cell with a new piece or ghost piece.
@@ -316,13 +321,18 @@ class LineClearEngine:
                 "added to leaderboard file", self._leaderboard
             )
 
-    def start_game(self):
-        """Start the game engine to play a game."""
+    def start_game(self, from_save=False):
+        """Start the game engine to play a game.
+
+        Args:
+            from_save: True if the game is loaded from a save file.
+        """
         self.game_running = True
         self.game_paused = False
 
         self._set_fall_speed()
-        self._generation_phase()
+        if not from_save:
+            self._generation_phase()
 
         if self._debug:
             print("DEBUG - LineClearEngine: Game Started")

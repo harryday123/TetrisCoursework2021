@@ -86,15 +86,15 @@ class LineClearApp(tk.Frame):
             print("DEBUG - LineClearApp: Start the game")
 
         self._menu_frame.grid_remove()
-        self.engine.start_game()
+        self.engine.start_game(from_save=True)
         self._main_run_loop()
 
     def load_game(self):
         """Load a game from a save."""
         if self._debug:
             print("DEBUG - LineClearApp: Load a game from save")
-        # TODO: Implement load button
-        pass
+        self.engine.load_game("./saves/2021-11-24 17:19.txt")
+        self.start_game()
 
     def _game_over(self):
         """Show the game over screen."""
