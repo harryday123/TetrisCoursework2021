@@ -60,10 +60,10 @@ class LineClearApp(tk.Frame):
 
     def update_ui_panels(self):
         """Mass update all UI panels with one function."""
+        self._matrix_frame.update_grid(self.engine.grid)
         self._hold_queue_frame.update_queue(self.engine.hold_queue)
         self._next_queue_frame.update_queue(self.engine.next_queue)
         # TODO: Update scoreboard
-        self._matrix_frame.update_grid(self.engine.grid)
 
     def _main_run_loop(self):
         if not self.engine.game_paused:
@@ -153,18 +153,19 @@ class Matrix(tk.Frame):
             Canvas origin is top left, therefore the matrix's first list is
             actually the last list in the engine. The first list draws the top
             row.
+        key_history: Holds the currently pressed keys
         canvas: The canvas widget that the matrix is drawn on
     """
 
     _keybind_map = {
-        "mv_left": "<Left>",
-        "mv_right": "<Right>",
-        "rt_clock": "<x>",
-        "rt_anti": "<z>",
-        "softdrop": "<Down>",
-        "harddrop": "<space>",
-        "hold": "<c>",
-        "pause": "<Escape>"
+        "Left": "mv_left",
+        "Right": "mv_right",
+        "x": "rt_clock",
+        "z": "rt_anti",
+        "Down": "softdrop",
+        "space": "harddrop",
+        "c": "hold",
+        "Escape": "pause"
     }
 
     def __init__(self, parent, debug=False, *args, **kwargs):
@@ -181,98 +182,68 @@ class Matrix(tk.Frame):
         self.current_grid = [[0 for i in range(10)] for r in range(22)]
         self.canvas = tk.Canvas(self, height=800, width=400)
         self.matrix = []
+        self.key_history = []
         self._create_empty_matrix()
         self._init_keybinds()
 
         self.canvas.pack()
 
     def _init_keybinds(self):
-        self.canvas.bind(self._keybind_map["mv_left"], self._move_left)
-        self.canvas.bind(self._keybind_map["mv_right"], self._move_right)
-        self.canvas.bind(self._keybind_map["rt_clock"], self._rotate_right)
-        self.canvas.bind(self._keybind_map["rt_anti"], self._rotate_left)
-        self.canvas.bind(self._keybind_map["softdrop"], self._soft_drop)
-        self.canvas.bind(self._keybind_map["harddrop"], self._hard_drop)
-        self.canvas.bind(self._keybind_map["hold"], self._hold_swap)
-        self.canvas.bind(self._keybind_map["pause"], self._pause)
+        self.canvas.bind("<KeyPress>", self._key_press)
+        self.canvas.bind("<KeyRelease>", self._key_release)
         self.canvas.focus_set()
 
-    def _move_left(self, event):
-        """Handle a left movement input from the user.
+    def _key_press(self, event):
+        """Handle a key press from the user.
 
         Args:
             event: The KeyPress event from the canvas
         """
-        print("Move Left")
-        self.parent.engine.move_current_piece(direction="L")
-        self.update_grid(self.parent.engine.grid)
+        if event.keysym not in self.key_history:
+            self.key_history.append(event.keysym)
 
-    def _move_right(self, event):
-        """Handle a right movement input from the user.
+            self._perform_actions_pressed()
 
-        Args:
-            event: The KeyPress event from the canvas
-        """
-        print("Move Right")
-        self.parent.engine.move_current_piece(direction="R")
-        self.update_grid(self.parent.engine.grid)
-
-    def _soft_drop(self, event):
-        """Handle a soft drop input from the user.
+    def _key_release(self, event):
+        """Handle a key release from the user.
 
         Args:
             event: The KeyPress event from the canvas
         """
-        print("Soft Drop")
-        self.parent.engine.soft_drop_toggle()
+        if event.keysym in self.key_history:
+            self.key_history.pop(self.key_history.index(event.keysym))
 
-    def _hard_drop(self, event):
-        """Handle a hard drop input from the user.
+            self._perform_actions_pressed()
 
-        Args:
-            event: The KeyPress event from the canvas
-        """
-        print("Hard Drop")
-        self.parent.engine.hard_drop()
+    def _perform_actions_pressed(self):
+        """Perform the actions represented by the keys in key_history."""
+        for key in self.key_history:
+            if key in list(self._keybind_map.keys()):
+                action = self._keybind_map[key]
+                if self._debug:
+                    print("DEBUG - Matrix: Action Performed:", action)
+                if action == "mv_left":
+                    self.parent.engine.move_current_piece(direction="L")
+                elif action == "mv_right":
+                    self.parent.engine.move_current_piece(direction="R")
+                elif action == "rt_clock":
+                    self.parent.engine.move_current_piece(direction="C")
+                elif action == "rt_anti":
+                    self.parent.engine.move_current_piece(direction="A")
+                elif action == "softdrop":
+                    # self.parent.engine.soft_drop_toggle()
+                    self.parent.engine.move_current_piece(direction="D")
+                elif action == "harddrop":
+                    self.parent.engine.hard_drop()
+                elif action == "hold":
+                    self.parent.engine.hold_swap()
+                elif action == "pause":
+                    self.parent.engine.toggle_pause_game()
 
-    def _pause(self, event):
-        """Handle a pause input from the user.
+                self.parent.update_ui_panels()
 
-        Args:
-            event: The KeyPress event from the canvas
-        """
-        print("Pause")
-        self.parent.engine.toggle_pause_game()
-
-    def _hold_swap(self, event):
-        """Handle a hold swap input from the user.
-
-        Args:
-            event: The KeyPress event from the canvas
-        """
-        print("Hold Queue Swap")
-        self.parent.engine.hold_swap()
-        self.parent.update_ui_panels()
-
-    def _rotate_left(self, event):
-        """Handle an anti-cockwise rotation input from the user.
-
-        Args:
-            event: The KeyPress event from the canvas
-        """
-        print("Rotate Anti-clockwise")
-        self.parent.engine.move_current_piece(direction="A")
-        self.update_grid(self.parent.engine.grid)
-
-    def _rotate_right(self, event):
-        """Handle a cockwise rotation input from the user.
-
-        Args:
-            event: The KeyPress event from the canvas
-        """
-        print("Rotate Clockwise")
-        self.parent.engine.move_current_piece(direction="C")
-        self.update_grid(self.parent.engine.grid)
+            else:
+                return
 
     def _create_empty_matrix(self):
         """Create a matrix filled with black squares."""

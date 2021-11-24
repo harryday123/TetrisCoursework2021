@@ -76,8 +76,6 @@ class LineClearEngine:
              - Rotate_AC
          fallspeed:
             The normal fall speed for the level. Defined in seconds per line.
-        soft_drop_on:
-            Determines if the fall speed should be quicker for a soft drop.
     """
 
     _grid_piece_map = {
@@ -125,7 +123,6 @@ class LineClearEngine:
         self._hold_available = True
         self._bag = []
         self.fallspeed = 0
-        self.soft_drop_on = False
 
         # Set the game options to their default values
         self._init_next_queue()
@@ -491,25 +488,21 @@ class LineClearEngine:
         #     pass
         # else:
         # TODO: Look into if the above is possible
+        self._hold_available = True
         self._pattern_match()
         self._completion_phase()
         self._generation_phase()
 
-    def _set_fall_speed(self, soft=False):
+    def _set_fall_speed(self):
         """Set the fall speed based on the level and soft drop setting.
 
         Args:
             soft: A boolean defaults to False. If True, the speed is 20x faster
         """
         # Update the fall speed
-        if soft:
-            self.fallspeed = round(((
-                0.8 - ((self.stats["level"] - 1) * 0.007)
-            ) ** (self.stats["level"] - 1)) * 50)
-        else:
-            self.fallspeed = round(((
-                0.8 - ((self.stats["level"] - 1) * 0.007)
-            ) ** (self.stats["level"] - 1)) * 1000)
+        self.fallspeed = round(((
+            0.8 - ((self.stats["level"] - 1) * 0.007)
+        ) ** (self.stats["level"] - 1)) * 1000)
 
         if self._debug:
             print("DEBUG - LineClearEngine: Fall Speed set to", self.fallspeed)
@@ -531,21 +524,6 @@ class LineClearEngine:
             )
 
         self.game_paused = not self.game_paused
-
-    def soft_drop_toggle(self):
-        """Set the fall speed for soft drop speed."""
-        if self._debug:
-            print(
-                "DEBUG - LineClearEngine: Soft Drop toggled from:",
-                self.soft_drop_on
-            )
-
-        self.soft_drop_on = not self.soft_drop_on
-
-        if self.soft_drop_on:
-            self._set_fall_speed(soft=True)
-        else:
-            self._set_fall_speed(soft=False)
 
     def hold_swap(self):
         """Swap the current piece into the hold queue if available."""
