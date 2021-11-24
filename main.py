@@ -55,7 +55,7 @@ class LineClearApp(tk.Frame):
         self._next_queue_frame.grid(column=3, row=1, rowspan=2)
 
         # Begin the game
-        self.engine._generation_phase()
+        self.engine.start_game()
         self._main_run_loop()
 
     def update_ui_panels(self):
@@ -66,9 +66,10 @@ class LineClearApp(tk.Frame):
         self._matrix_frame.update_grid(self.engine.grid)
 
     def _main_run_loop(self):
-        self.engine.falling_phase()
-        self.update_ui_panels()
-        self.parent.after(1000, self._main_run_loop)
+        if not self.engine.game_paused:
+            self.engine.falling_phase()
+            self.update_ui_panels()
+        self.parent.after(self.engine.fallspeed, self._main_run_loop)
 
 
 class NextQueue(tk.Frame):
@@ -156,14 +157,14 @@ class Matrix(tk.Frame):
     """
 
     _keybind_map = {
-        "mv_left": "",
-        "mv_right": "",
-        "rt_clock": "",
-        "rt_anti": "",
-        "softdrop": "",
-        "harddrop": "",
-        "hold": "",
-        "pause": ""
+        "mv_left": "<Left>",
+        "mv_right": "<Right>",
+        "rt_clock": "<x>",
+        "rt_anti": "<z>",
+        "softdrop": "<Down>",
+        "harddrop": "<space>",
+        "hold": "<c>",
+        "pause": "<Escape>"
     }
 
     def __init__(self, parent, debug=False, *args, **kwargs):
@@ -186,17 +187,15 @@ class Matrix(tk.Frame):
         self.canvas.pack()
 
     def _init_keybinds(self):
-        self.canvas.bind("<Left>", self._move_left)
-        self.canvas.bind("<Right>", self._move_right)
-        self.canvas.bind("<Down>", self._soft_drop)
-        self.canvas.bind("<Shift_L>", self._hold_swap)
-        self.canvas.bind("q", self._rotate_left)
-        self.canvas.bind("w", self._rotate_right)
-
+        self.canvas.bind(self._keybind_map["mv_left"], self._move_left)
+        self.canvas.bind(self._keybind_map["mv_right"], self._move_right)
+        self.canvas.bind(self._keybind_map["rt_clock"], self._rotate_right)
+        self.canvas.bind(self._keybind_map["rt_anti"], self._rotate_left)
+        self.canvas.bind(self._keybind_map["softdrop"], self._soft_drop)
+        self.canvas.bind(self._keybind_map["harddrop"], self._hard_drop)
+        self.canvas.bind(self._keybind_map["hold"], self._hold_swap)
+        self.canvas.bind(self._keybind_map["pause"], self._pause)
         self.canvas.focus_set()
-
-    # def test(self, event):
-    #     print('keysym:', event.keysym)
 
     def _move_left(self, event):
         """Handle a left movement input from the user.
@@ -225,8 +224,25 @@ class Matrix(tk.Frame):
             event: The KeyPress event from the canvas
         """
         print("Soft Drop")
-        # TODO: Implement this soft drop functionality
-        pass
+        self.parent.engine.soft_drop_toggle()
+
+    def _hard_drop(self, event):
+        """Handle a hard drop input from the user.
+
+        Args:
+            event: The KeyPress event from the canvas
+        """
+        print("Hard Drop")
+        self.parent.engine.hard_drop()
+
+    def _pause(self, event):
+        """Handle a pause input from the user.
+
+        Args:
+            event: The KeyPress event from the canvas
+        """
+        print("Pause")
+        self.parent.engine.toggle_pause_game()
 
     def _hold_swap(self, event):
         """Handle a hold swap input from the user.

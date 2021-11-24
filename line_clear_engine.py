@@ -76,6 +76,8 @@ class LineClearEngine:
              - Rotate_AC
          fallspeed:
             The normal fall speed for the level. Defined in seconds per line.
+        soft_drop_on:
+            Determines if the fall speed should be quicker for a soft drop.
     """
 
     _grid_piece_map = {
@@ -115,7 +117,7 @@ class LineClearEngine:
         self.stats = {
             "score": 0,
             "lines": 0,
-            "level": 0,
+            "level": 1,
             "goal": 0
         }
         self.game_running = False
@@ -123,11 +125,13 @@ class LineClearEngine:
         self._hold_available = True
         self._bag = []
         self.fallspeed = 0
+        self.soft_drop_on = False
 
         # Set the game options to their default values
         self._init_next_queue()
         self.set_game_options()
         self._create_grid()
+        self._set_fall_speed()
 
     def _create_grid(self):
         """Create the grid property containing information on the grid.
@@ -491,22 +495,57 @@ class LineClearEngine:
         self._completion_phase()
         self._generation_phase()
 
-    def _set_fall_speed(self):
-        if self.game_paused or not self.game_running:
-            self.fallspeed = 0
+    def _set_fall_speed(self, soft=False):
+        """Set the fall speed based on the level and soft drop setting.
+
+        Args:
+            soft: A boolean defaults to False. If True, the speed is 20x faster
+        """
+        # Update the fall speed
+        if soft:
+            self.fallspeed = round(((
+                0.8 - ((self.stats["level"] - 1) * 0.007)
+            ) ** (self.stats["level"] - 1)) * 50)
         else:
-            # Update the fall speed
             self.fallspeed = round(((
                 0.8 - ((self.stats["level"] - 1) * 0.007)
             ) ** (self.stats["level"] - 1)) * 1000)
 
-    def _hard_drop(self):
+        if self._debug:
+            print("DEBUG - LineClearEngine: Fall Speed set to", self.fallspeed)
+
+    def hard_drop(self):
         """Hard Drop the current piece."""
         if self._debug:
             print("DEBUG - LineClearEngine: Hard Dropping")
 
         while self._check_movement_possible():
             self.move_current_piece()
+
+    def toggle_pause_game(self):
+        """Pause the game running."""
+        if self._debug:
+            print(
+                "DEBUG - LineClearEngine: Game Pause Toggled from:",
+                self.game_paused
+            )
+
+        self.game_paused = not self.game_paused
+
+    def soft_drop_toggle(self):
+        """Set the fall speed for soft drop speed."""
+        if self._debug:
+            print(
+                "DEBUG - LineClearEngine: Soft Drop toggled from:",
+                self.soft_drop_on
+            )
+
+        self.soft_drop_on = not self.soft_drop_on
+
+        if self.soft_drop_on:
+            self._set_fall_speed(soft=True)
+        else:
+            self._set_fall_speed(soft=False)
 
     def hold_swap(self):
         """Swap the current piece into the hold queue if available."""
