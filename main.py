@@ -66,7 +66,7 @@ class LineClearApp(tk.Frame):
         # TODO: Update scoreboard
 
     def _main_run_loop(self):
-        if not self.engine.game_paused:
+        if self.engine.game_running and not self.engine.game_paused:
             self.engine.falling_phase()
             self.update_ui_panels()
         self.parent.after(self.engine.fallspeed, self._main_run_loop)

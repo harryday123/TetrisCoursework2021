@@ -488,10 +488,13 @@ class LineClearEngine:
         #     pass
         # else:
         # TODO: Look into if the above is possible
+
+        # Locked down here
         self._hold_available = True
         self._pattern_match()
         self._completion_phase()
-        self._generation_phase()
+        if self.game_running:
+            self._generation_phase()
 
     def _set_fall_speed(self):
         """Set the fall speed based on the level and soft drop setting.
@@ -868,6 +871,39 @@ class LineClearEngine:
                   "calculated")
         return (center[0] + new_rel_coords[0], center[1] + new_rel_coords[1])
 
+    def _check_game_overs(self):
+        """Check if a Game Over event has occured."""
+        if self._debug:
+            print("DEBUG - LineClearEngine: Checking for Game Over conditions")
+
+        game_over = False
+        below_sky = False
+        above_sky = False
+
+        blocks = [self.current_piece["block" + str(i)] for i in range(1, 5)]
+
+        for (col, row) in blocks:
+            # Check if the current piece is in the spawn area
+            if row == 20 and col in range(4, 8):
+                game_over = True
+            elif row == 21 and col in range(4, 7):
+                game_over = True
+            # Else check if there are any other blocks above tha
+            elif row < 20:
+                below_sky = True
+            else:
+                above_sky = True
+
+        # Check that there at least one piece is below the skyline
+        if above_sky and not below_sky:
+            game_over = True
+
+        if game_over:
+            # Game Over Logic
+            self.game_running = False
+            if self._debug:
+                print("DEBUG - LineClearEngine: Game Over Condition Found")
+
     def _pattern_match(self):
         """Check the grid for lines to be cleared.
 
@@ -926,6 +962,8 @@ class LineClearEngine:
             self.stats["level"] += 1
             self.stats["goal"] += self.stats["level"] * 5
             self._set_fall_speed()
+
+        self._check_game_overs()
 
 
 if __name__ == "__main__":
