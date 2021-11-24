@@ -47,29 +47,62 @@ class LineClearApp(tk.Frame):
         self._matrix_frame = Matrix(self, debug=debug, *args, **kwargs)
         self._hold_queue_frame = HoldQueue(self, debug=debug, *args, **kwargs)
         self._stats_frame = Stats(self, debug=debug, *args, **kwargs)
+        self._menu_frame = Menu(self, debug=debug, *args, **kwargs)
 
         # Place Subframes
         self._hold_queue_frame.grid(column=1, row=1)
         self._stats_frame.grid(column=1, row=2)
         self._matrix_frame.grid(column=2, row=1, rowspan=2)
+        self._menu_frame.grid(column=2, row=1, rowspan=2)
         self._next_queue_frame.grid(column=3, row=1, rowspan=2)
-
-        # Begin the game
-        self.engine.start_game()
-        self._main_run_loop()
 
     def update_ui_panels(self):
         """Mass update all UI panels with one function."""
+        if self._debug:
+            print("DEBUG - LineClearApp: Update All UI Panels")
         self._matrix_frame.update_grid(self.engine.grid)
         self._hold_queue_frame.update_queue(self.engine.hold_queue)
         self._next_queue_frame.update_queue(self.engine.next_queue)
         # TODO: Update scoreboard
 
     def _main_run_loop(self):
-        if self.engine.game_running and not self.engine.game_paused:
+        # If the game is over
+        if not self.engine.game_running and not self.engine.game_paused:
+            self._game_over()
+            return
+
+        if self._debug:
+            print("DEBUG - LineClearApp: Main Loop Ran")
+        if not self.engine.game_paused and self.engine.game_running:
             self.engine.falling_phase()
             self.update_ui_panels()
-        self.parent.after(self.engine.fallspeed, self._main_run_loop)
+            self.parent.after(self.engine.fallspeed, self._main_run_loop)
+
+    def start_game(self):
+        """Begin the game."""
+        if self._debug:
+            print("DEBUG - LineClearApp: Start the game")
+
+        self._menu_frame.grid_remove()
+        self.engine.start_game()
+        self._main_run_loop()
+
+    def load_game(self):
+        """Load a game from a save."""
+        if self._debug:
+            print("DEBUG - LineClearApp: Load a game from save")
+        # TODO: Implement load button
+        pass
+
+    def _game_over(self):
+        """Show the game over screen."""
+        self._menu_frame.grid(column=2, row=1, rowspan=2)
+        self._menu_frame.game_over_buttons()
+
+    def play_again(self):
+        """Reset the game to play again."""
+        self.engine.reset_state()
+        self.update_ui_panels()
 
 
 class NextQueue(tk.Frame):
@@ -425,7 +458,10 @@ class Stats(tk.Frame):
         self.goal = tk.StringVar(self, value="0")
 
         self.configure(height=600, width=200)
+        self._init_labels()
 
+    def _init_labels(self):
+        """Initialise the stats labels."""
         tk.Label(self, text="Score:", bg="#616161").pack()
         self.score_lbl = tk.Label(self, textvariable=self.score, bg="#616161")
         self.score_lbl.pack()
@@ -455,6 +491,83 @@ class Stats(tk.Frame):
         self.lines.set(str(lines))
         self.level.set(str(level))
         self.goal.set(str(goal))
+
+
+class Menu(tk.Frame):
+    """The frame to show the menu above the canvas.
+
+    Attributes:
+        parent: The parent of the frame
+        _debug: Determines whether to show the debug output
+        _start_button: The start game button
+        _load_game_button: The load game button
+    """
+
+    def __init__(self, parent, debug=False, *args, **kwargs):
+        """Initialise the Frame."""
+        self.parent = parent
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+
+        self._debug = debug
+
+        if self._debug:
+            print("DEBUG - Menu: Running __init__")
+
+        self.configure(height=800, width=400)
+        self._init_buttons_()
+
+    def _init_buttons_(self):
+        """Initialise the buttons on the menu."""
+        self._start_btn = tk.Button(
+            self,
+            text="Start Game",
+            command=self._start_game
+        )
+
+        self._load_game_btn = tk.Button(
+            self,
+            text="Load Game",
+            command=self._load_game
+        )
+
+        self._start_btn.pack()
+        self._load_game_btn.pack()
+
+    def game_over_buttons(self):
+        """Configure the menu for a game over screen."""
+        # Unload the start game buttons
+        self._start_btn.pack_forget()
+        self._load_game_btn.pack_forget()
+
+        # Game Over Screen
+        self._game_over_lbl = tk.Label(self, text="Game Over")
+
+        self._play_again_btn = tk.Button(
+            self,
+            text="Play Again",
+            command=self._play_again
+        )
+        # TODO: Add scoreboard options here
+
+        self._game_over_lbl.pack()
+        self._play_again_btn.pack()
+
+    def _start_game(self):
+        """Run the command to start the game."""
+        self.parent.start_game()
+
+    def _load_game(self):
+        """Run the command to load a game from a save."""
+        self.parent.load_game()
+
+    def _play_again(self):
+        """Run the command to start the game."""
+        self.parent.play_again()
+
+        self._game_over_lbl.pack_forget()
+        self._play_again_btn.pack_forget()
+
+        self._init_buttons_()
 
 
 if __name__ == "__main__":

@@ -64,16 +64,6 @@ class LineClearEngine:
             Determines if the current piece can swap into the hold queue
         _bag:
             The bag to generate pieces from
-        latest_input:
-            The latest command the user has entered whilst playing
-            Commands:
-             - Hold
-             - Hard_D
-             - Soft_D
-             - Move_L
-             - Move_R
-             - Rotate_C
-             - Rotate_AC
          fallspeed:
             The normal fall speed for the level. Defined in seconds per line.
     """
@@ -103,7 +93,6 @@ class LineClearEngine:
         self.grid = None
         self.next_queue = None
         self.hold_queue = None
-        self.latest_input = None
         self.current_piece = {
             "type": "",
             "facing": "",
@@ -911,7 +900,7 @@ class LineClearEngine:
         """
         if self._debug:
             print("DEBUG - LineClearEngine: Checking for line clears")
-
+        # TODO: Check this
         rows_to_clear = []
         # Loop through each row
         for i in range(len(self.grid)):
@@ -964,6 +953,31 @@ class LineClearEngine:
             self._set_fall_speed()
 
         self._check_game_overs()
+
+    def reset_state(self):
+        """Reset the engine to run the game again."""
+        self.current_piece = {
+            "type": "",
+            "facing": "",
+            "block1": (0, 0),
+            "block2": (0, 0),
+            "block3": (0, 0),
+            "block4": (0, 0)
+        }
+        self.stats = {
+            "score": 0,
+            "lines": 0,
+            "level": 1,
+            "goal": 0
+        }
+        self.game_running = False
+        self.game_paused = False
+        self._hold_available = True
+        self.hold_queue = None
+        self._bag = []
+        self._init_next_queue()
+        self._create_grid()
+        self._set_fall_speed()
 
 
 if __name__ == "__main__":
