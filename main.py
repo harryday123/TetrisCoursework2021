@@ -280,6 +280,7 @@ class Matrix(tk.Frame):
     def _init_keybinds(self):
         self.canvas.bind("<Escape>", self._toggle_pause)
         self.canvas.bind("b", self.toggle_boss_screen)
+        self.canvas.bind("/", self.cheat_code)
         self.canvas.bind("<KeyPress>", self._key_press)
         self.canvas.bind("<KeyRelease>", self._key_release)
         self.canvas.focus_set()
@@ -344,6 +345,12 @@ class Matrix(tk.Frame):
         if self._debug:
             print("DEBUG - Matrix: Action Performed: boss_screen")
         self.parent.toggle_boss_screen()
+
+    def cheat_code(self, event):
+        """Activate the cheat."""
+        if self._debug:
+            print("DEBUG - Matrix: Action Performed: cheat_code")
+        self.parent.engine.stats["score"] += 500
 
     def _create_empty_matrix(self):
         """Create a matrix filled with black squares."""
