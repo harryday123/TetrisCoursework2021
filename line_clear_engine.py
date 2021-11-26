@@ -496,12 +496,6 @@ class LineClearEngine:
         """
         if self._debug:
             print("DEBUG - LineClearEngine: Entering Lock Phase")
-        # if self._game_options["lock_down"] == "Extended":
-        #     pass
-        # elif self._game_options["lock_down"] == "Classic":
-        #     pass
-        # else:
-        # TODO: Look into if the above is possible
 
         # Locked down here
         self._hold_available = True
@@ -937,7 +931,7 @@ class LineClearEngine:
         """
         if self._debug:
             print("DEBUG - LineClearEngine: Checking for line clears")
-        # TODO: Check this
+
         rows_to_clear = []
         # Loop through each row
         for i in range(len(self.grid)):
@@ -988,7 +982,6 @@ class LineClearEngine:
 
     def _completion_phase(self):
         """Finalise the round and prepare for the next generation."""
-        # TODO: Update Score
         # Check if level up has occured
         if self.stats[
             "level"

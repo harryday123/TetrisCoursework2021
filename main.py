@@ -71,6 +71,8 @@ class LineClearApp(tk.Frame):
         self._next_queue_frame.grid(column=3, row=1, rowspan=2)
         self._leaderboard_frm.grid(column=4, row=1, rowspan=2)
 
+        self._menu_frame._start_btn.focus_set()
+
     def toggle_boss_screen(self):
         """Toggle the boss screen on and off."""
         if self._debug:
@@ -137,16 +139,20 @@ class LineClearApp(tk.Frame):
 
     def _game_over(self):
         """Show the game over screen."""
-        self.engine.add_to_leaderboard(
-            self._initials,
-            self.engine.stats["score"]
-        )
+        if self._initials != "":
+            self.engine.add_to_leaderboard(
+                self._initials,
+                self.engine.stats["score"]
+            )
         self._menu_frame.grid(column=2, row=1, rowspan=2)
         self._leaderboard_frm.update_leaderboard()
         self._menu_frame.game_over_buttons()
 
     def play_again(self):
         """Reset the game to play again."""
+        if self._debug:
+            print("DEBUG - LineClearApp: Play Again clicked")
+        self._initials = ""
         self.engine.reset_state()
         self.update_ui_panels()
 
@@ -221,6 +227,9 @@ class NextQueue(tk.Frame):
             queue: A list of characters representing the next pieces.
         """
         if queue is None:
+            for i in range(len(self.queue_images_lbls)):
+                self.queue_images_lbls[i].configure(image=None)
+                self.queue_images_lbls[i].image = None
             return
 
         if self._debug:
@@ -506,6 +515,8 @@ class HoldQueue(tk.Frame):
             queue: A character representing the hold piece.
         """
         if queue is None:
+            self.piece_lbl.configure(image=None)
+            self.piece_lbl.image = None
             return
 
         if self._debug:
@@ -687,6 +698,7 @@ class Menu(tk.Frame):
     def _start_game(self):
         """Run the command to start the game."""
         self.parent._initials = self._initial_entry.get()
+        self.unpack_all()
         self.parent.start_game()
 
     def _load_game(self):
@@ -706,7 +718,7 @@ class Menu(tk.Frame):
         self._game_over_lbl.pack_forget()
         self._play_again_btn.pack_forget()
 
-        self._init_buttons_()
+        self.start_screen_buttons()
 
     def _continue_game(self):
         """Continue Playing the game."""
