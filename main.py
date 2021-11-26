@@ -6,6 +6,8 @@ This coursework is an adaptation of the classic Tetris game written in Tkinter.
 # Imports
 import tkinter as tk
 from line_clear_engine import LineClearEngine
+from os import listdir
+from os.path import isfile, join
 
 
 class LineClearApp(tk.Frame):
@@ -121,9 +123,16 @@ class LineClearApp(tk.Frame):
 
     def load_game(self):
         """Load a game from a save."""
+        files = []
+        for file in listdir("./saves"):
+            if isfile(join("saves", file)) and file.endswith(".txt"):
+                files.append(join("saves", file))
+
+        files.sort(reverse=True)
         if self._debug:
-            print("DEBUG - LineClearApp: Load a game from save")
-        self._initials = self.engine.load_game("./saves/2021-11-26 13:11.txt")
+            print("DEBUG - LineClearApp: Load game from save file:", files[0])
+
+        self._initials = self.engine.load_game(files[0])
         self.start_game()
 
     def _game_over(self):
@@ -612,7 +621,7 @@ class Menu(tk.Frame):
         )
         self._load_game_btn = tk.Button(
             self,
-            text="Load Game",
+            text="Load Last Game Save",
             command=self._load_game,
             bg="black"
         )
