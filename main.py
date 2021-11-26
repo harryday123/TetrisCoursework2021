@@ -322,7 +322,7 @@ class Matrix(tk.Frame):
                 elif action == "rt_anti":
                     self.parent.engine.move_current_piece(direction="A")
                 elif action == "softdrop":
-                    self.parent.engine.move_current_piece(direction="D")
+                    self.parent.engine.move_current_piece(direction="SD")
                 elif action == "harddrop":
                     self.parent.engine.hard_drop()
                 elif action == "hold":

@@ -529,8 +529,13 @@ class LineClearEngine:
         if self._debug:
             print("DEBUG - LineClearEngine: Hard Dropping")
 
+        count = 0
+
         while self._check_movement_possible():
             self.move_current_piece()
+            count += 1
+
+        self.stats["score"] += 2 * count
 
     def toggle_pause_game(self):
         """Pause the game running."""
@@ -577,6 +582,7 @@ class LineClearEngine:
                     D: Move down
                     C: Rotation clockwise
                     A: Rotation anti - clockwise
+                    SD: Soft Drop (Same as D but adds to score)
         """
         if self._debug:
             print(
@@ -586,6 +592,12 @@ class LineClearEngine:
 
         # Preserve the last position for updating later
         old_piece = self.current_piece.copy()
+
+        # Update score on a soft drop
+        if direction == "SD":
+            self.stats["score"] += 1
+            direction = "D"
+
         # If the direction is a move
         if direction in "LRD":
             # Check if the move is possible
@@ -947,6 +959,15 @@ class LineClearEngine:
 
         # Update the lines cleared stat
         self.stats["lines"] += len(rows_to_clear)
+        if len(rows_to_clear) == 1:
+            self.stats["score"] += 100 * self.stats["level"]
+        elif len(rows_to_clear) == 2:
+            self.stats["score"] += 300 * self.stats["level"]
+        elif len(rows_to_clear) == 3:
+            self.stats["score"] += 500 * self.stats["level"]
+        elif len(rows_to_clear) == 4:
+            self.stats["score"] += 800 * self.stats["level"]
+
         if self._debug:
             print("DEBUG - LineClearEngine: Lines cleared updated to:",
                   self.stats["lines"])
@@ -969,7 +990,9 @@ class LineClearEngine:
         """Finalise the round and prepare for the next generation."""
         # TODO: Update Score
         # Check if level up has occured
-        if self.stats["goal"] <= self.stats["lines"]:
+        if self.stats[
+            "level"
+        ] < 15 and self.stats["goal"] <= self.stats["lines"]:
             if self._debug:
                 print("DEBUG - LineClearEngine: Level Up Occured")
 
