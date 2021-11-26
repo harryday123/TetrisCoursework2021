@@ -135,10 +135,13 @@ class LineClearEngine:
         if self._debug:
             print("DEBUG - LineClearEngine: Generated empty grid array")
 
-    def save_game(self):
+    def save_game(self, initials=""):
         """Save the current game state to a file.
 
         This saves all the state variables to a file.
+
+        Args:
+            initials: Defaults to "". The initials of the current player.
         """
         today = datetime.now()
         formatted_time = today.strftime("%Y-%m-%d %H:%M")
@@ -156,6 +159,9 @@ class LineClearEngine:
             str(self._bag)
         ]
 
+        if initials != "":
+            lines.append(initials)
+
         with open(file_name, mode='w') as f:
             f.write('\n'.join(str(line) for line in lines))
 
@@ -170,6 +176,9 @@ class LineClearEngine:
 
         Args:
             filename: The file to read the saved game from
+
+        Returns:
+            The initials of the player if they were found.
         """
         with open(filename, mode='r') as f:
             lines = f.readlines()
@@ -190,6 +199,11 @@ class LineClearEngine:
                 "DEBUG - LineClearEngine: Opened save file and",
                 "retrieved stored data"
             )
+
+        if len(lines) == 10:
+            return lines[9].strip()
+        else:
+            return ""
 
     def _update_grid_position(self, row, col, type, ghost=False):
         """Update a grid cell with a new piece or ghost piece.
@@ -288,7 +302,7 @@ class LineClearEngine:
             for row in reader:
                 output_list.append((row["Initials"], int(row["Score"])))
 
-        output_list.sort(key=lambda x: x[1])
+        output_list.sort(key=lambda x: x[1], reverse=True)
         if self._debug:
             print(
                 "DEBUG - LineClearEngine: Leaderboard Generated: ",
@@ -329,6 +343,7 @@ class LineClearEngine:
         """
         self.game_running = True
         self.game_paused = False
+        self.stats["goal"] = 5
 
         self._set_fall_speed()
         if not from_save:

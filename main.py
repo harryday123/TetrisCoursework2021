@@ -17,6 +17,7 @@ class LineClearApp(tk.Frame):
         parent: The parent of the frame (normally the root)
         engine: The TetrisEngine object to use to run the game
         _debug: Determines whether to show debug output
+        _initials: The intials of the player
         _next_queue_frame: The Next Queue Frame
         _matrix_frame: The Matrix Frame
         _hold_queue_frame: The Hold Queue Frame
@@ -40,6 +41,7 @@ class LineClearApp(tk.Frame):
         self.engine = engine
 
         self._debug = debug
+        self._initials = ""
 
         if self._debug:
             print("DEBUG - LineClearApp: Running __init__")
@@ -113,17 +115,23 @@ class LineClearApp(tk.Frame):
 
         self._menu_frame.grid_remove()
         self.engine.start_game(from_save=True)
+        self._leaderboard_frm.update_leaderboard()
+        self._matrix_frame.canvas.focus_set()
         self._main_run_loop()
 
     def load_game(self):
         """Load a game from a save."""
         if self._debug:
             print("DEBUG - LineClearApp: Load a game from save")
-        self.engine.load_game("./saves/2021-11-24 17:19.txt")
+        self._initials = self.engine.load_game("./saves/2021-11-26 13:11.txt")
         self.start_game()
 
     def _game_over(self):
         """Show the game over screen."""
+        self.engine.add_to_leaderboard(
+            self._initials,
+            self.engine.stats["score"]
+        )
         self._menu_frame.grid(column=2, row=1, rowspan=2)
         self._leaderboard_frm.update_leaderboard()
         self._menu_frame.game_over_buttons()
@@ -149,7 +157,7 @@ class LineClearApp(tk.Frame):
 
     def save_game(self):
         """Save the current game state and exit."""
-        self.engine.save_game()
+        self.engine.save_game(initials=self._initials)
         self.play_again()
 
 
@@ -576,7 +584,7 @@ class Menu(tk.Frame):
         """Initialise the Frame."""
         self.parent = parent
         tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.configure(height=800, width=400)
+        self.configure(height=800, width=400, bg="black")
 
         self._init_buttons_()
 
@@ -592,12 +600,14 @@ class Menu(tk.Frame):
         self._start_btn = tk.Button(
             self,
             text="Start Game",
-            command=self._start_game
+            command=self._start_game,
+            bg="black"
         )
         self._load_game_btn = tk.Button(
             self,
             text="Load Game",
-            command=self._load_game
+            command=self._load_game,
+            bg="black"
         )
         self._game_over_lbl = tk.Label(self, text="Game Over")
         self._play_again_btn = tk.Button(
@@ -616,11 +626,26 @@ class Menu(tk.Frame):
             text="Continue",
             command=self._continue_game
         )
+        self._initial_entry_lbl = tk.Label(
+            self,
+            text="Enter your initials to save your score to the leaderboard",
+            bg="black",
+            fg="white"
+        )
+        self._initial_entry = tk.Entry(
+            self,
+            validate="key",
+            validatecommand=self._validate,
+            bg="black",
+            fg="white"
+        )
 
     def start_screen_buttons(self):
         """Show the start screen buttons."""
         self.unpack_all()
         self._start_btn.pack()
+        self._initial_entry_lbl.pack()
+        self._initial_entry.pack()
         self._load_game_btn.pack()
         self.focus_set()
 
@@ -628,8 +653,6 @@ class Menu(tk.Frame):
         """Configure the menu for a game over screen."""
         # Unload the start game buttons
         self.unpack_all()
-
-        # TODO: Add scoreboard options here
 
         self._game_over_lbl.pack()
         self._play_again_btn.pack()
@@ -647,6 +670,7 @@ class Menu(tk.Frame):
 
     def _start_game(self):
         """Run the command to start the game."""
+        self.parent._initials = self._initial_entry.get()
         self.parent.start_game()
 
     def _load_game(self):
@@ -681,6 +705,15 @@ class Menu(tk.Frame):
         self._pause_lbl.pack_forget()
         self._continue_btn.pack_forget()
         self._save_and_exit_btn.pack_forget()
+        self._initial_entry.pack_forget()
+        self._initial_entry_lbl.pack_forget()
+
+    def _validate(self):
+        """Validate the initials input box."""
+        if len(self._initial_entry.get()) > 2:
+            return False
+        else:
+            return True
 
 
 class Leaderboard(tk.Frame):
