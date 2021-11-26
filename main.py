@@ -16,10 +16,12 @@ class LineClearApp(tk.Frame):
     Attributes:
         parent: The parent of the frame (normally the root)
         engine: The TetrisEngine object to use to run the game
+        _debug: Determines whether to show debug output
         _next_queue_frame: The Next Queue Frame
         _matrix_frame: The Matrix Frame
         _hold_queue_frame: The Hold Queue Frame
         _stats_frame: The Stats Frame
+        _leaderboard_frm: The leaderboard Frame
     """
 
     def __init__(self, engine, parent, debug=False, *args, **kwargs):
@@ -48,6 +50,7 @@ class LineClearApp(tk.Frame):
         self._hold_queue_frame = HoldQueue(self, debug=debug, *args, **kwargs)
         self._stats_frame = Stats(self, debug=debug, *args, **kwargs)
         self._menu_frame = Menu(self, debug=debug, *args, **kwargs)
+        self._leaderboard_frm = Leaderboard(self, debug=debug, *args, **kwargs)
 
         # Boss Key Image
         self._boss_key_active = False
@@ -62,6 +65,7 @@ class LineClearApp(tk.Frame):
         self._matrix_frame.grid(column=2, row=1, rowspan=2)
         self._menu_frame.grid(column=2, row=1, rowspan=2)
         self._next_queue_frame.grid(column=3, row=1, rowspan=2)
+        self._leaderboard_frm.grid(column=4, row=1, rowspan=2)
 
     def toggle_boss_screen(self):
         """Toggle the boss screen on and off."""
@@ -121,6 +125,7 @@ class LineClearApp(tk.Frame):
     def _game_over(self):
         """Show the game over screen."""
         self._menu_frame.grid(column=2, row=1, rowspan=2)
+        self._leaderboard_frm.update_leaderboard()
         self._menu_frame.game_over_buttons()
 
     def play_again(self):
@@ -561,10 +566,10 @@ class Menu(tk.Frame):
         _debug: Determines whether to show the debug output
         _start_button: The start game button
         _load_game_button: The load game button
-        _game_over_lbl:
-        _play_again_btn:
-        _pause_lbl:
-        _continue_btn:
+        _game_over_lbl: The game over text
+        _play_again_btn: The play again button
+        _pause_lbl: The pause button
+        _continue_btn: The continue button
     """
 
     def __init__(self, parent, debug=False, *args, **kwargs):
@@ -676,6 +681,55 @@ class Menu(tk.Frame):
         self._pause_lbl.pack_forget()
         self._continue_btn.pack_forget()
         self._save_and_exit_btn.pack_forget()
+
+
+class Leaderboard(tk.Frame):
+    """The frame to show the leaderboard.
+
+    Attributes:
+        parent: The parent of the frame
+        _debug: Determines whether to show the debug output
+
+    """
+
+    def __init__(self, parent, debug=False, *args, **kwargs):
+        """Initialise the Frame."""
+        self.parent = parent
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self.configure(height=800, width=200)
+
+        self._debug = debug
+
+        if self._debug:
+            print("DEBUG - Leaderboard: Running __init__")
+
+        self._init_leaderboard()
+
+    def _init_leaderboard(self):
+        """Initialise the labels to hold the leaderboard entries."""
+        self._leaderboard_title = tk.Label(
+            self,
+            text="Leaderboard",
+            bg="#616161"
+        )
+        self._leaderboard_lbls = [
+            tk.Label(self, text="", bg="#616161") for i in range(10)
+        ]
+
+        self._leaderboard_title.pack()
+        for label in self._leaderboard_lbls:
+            label.pack()
+
+        self.update_leaderboard()
+
+    def update_leaderboard(self):
+        """Update the leaderboard labels."""
+        data = self.parent.engine.read_leaderboard()
+        for i in range(min(
+            len(self._leaderboard_lbls),
+            len(data)
+        )):
+            self._leaderboard_lbls[i].configure(text=data[i])
 
 
 if __name__ == "__main__":
