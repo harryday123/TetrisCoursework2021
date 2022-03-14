@@ -8,6 +8,7 @@ import tkinter as tk
 from line_clear_engine import LineClearEngine
 from os import listdir
 from os.path import isfile, join
+import argparse
 
 
 class LineClearApp(tk.Frame):
@@ -794,6 +795,17 @@ class Leaderboard(tk.Frame):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Run the Line Clear Game')
+    parser.add_argument(
+        '--debug',
+        dest='debug',
+        action='store_const',
+        const=True,
+        default=False,
+        help='Run the game in debug mode'
+    )
+    args = parser.parse_args()
+
     # Initialise Window
     root = tk.Tk()
     root.geometry("1600x900")
@@ -801,9 +813,9 @@ if __name__ == "__main__":
     root.configure(bg="#616161")
 
     LineClearApp(
-        LineClearEngine(debug=True),
+        LineClearEngine(debug=args.debug),
         root,
         bg="#616161",
-        debug=True
+        debug=args.debug
     ).pack()
     root.mainloop()
